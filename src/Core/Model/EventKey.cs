@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow.Core.Contract
+namespace Microsoft.EventDrivenWorkflow.Core.Model
 {
     public class EventKey
     {
@@ -12,7 +12,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.Contract
 
         public string EventName { get; init; }
 
-        public string Partition { get; init; }
+        public string PartitionKey { get; init; }
 
         public Guid WorkflowExecutionId { get; init; }
     }

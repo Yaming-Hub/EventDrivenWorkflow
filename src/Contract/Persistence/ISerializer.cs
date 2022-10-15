@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow.Contract.Provider
+namespace Microsoft.EventDrivenWorkflow.Contract.Persistence
 {
     public interface ISerializer
     {

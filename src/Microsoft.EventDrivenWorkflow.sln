@@ -5,7 +5,14 @@ VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.EventDrivenWorkflow.Contract", "Contract\Microsoft.EventDrivenWorkflow.Contract.csproj", "{9E875C71-1C37-420E-AF4A-76DAE85D5C8F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Core", "Core\Microsoft.EventDrivenWorkflow.Core.csproj", "{8E8E9DCA-4F5E-46DE-9E19-2A5E97BFDF45}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.EventDrivenWorkflow.Core", "Core\Microsoft.EventDrivenWorkflow.Core.csproj", "{8E8E9DCA-4F5E-46DE-9E19-2A5E97BFDF45}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Provider.ServiceBus", "Provider.ServiceBus\Microsoft.EventDrivenWorkflow.Provider.ServiceBus.csproj", "{7C81A196-DD40-4DB4-A1D1-39E5223EABD0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E311B844-E360-43E1-9E35-B671C2B69D3D}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +28,10 @@ Global
 		{8E8E9DCA-4F5E-46DE-9E19-2A5E97BFDF45}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E8E9DCA-4F5E-46DE-9E19-2A5E97BFDF45}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E8E9DCA-4F5E-46DE-9E19-2A5E97BFDF45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C81A196-DD40-4DB4-A1D1-39E5223EABD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C81A196-DD40-4DB4-A1D1-39E5223EABD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C81A196-DD40-4DB4-A1D1-39E5223EABD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C81A196-DD40-4DB4-A1D1-39E5223EABD0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

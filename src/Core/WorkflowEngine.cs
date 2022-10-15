@@ -1,52 +1,47 @@
-﻿using Microsoft.EventDrivenWorkflow.Contract;
-using Microsoft.EventDrivenWorkflow.Contract.Provider;
-using Microsoft.EventDrivenWorkflow.Core.Contract;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EventDrivenWorkflow.Contract.Messaging;
+using Microsoft.EventDrivenWorkflow.Contract.Persistence;
+using Microsoft.EventDrivenWorkflow.Core.Messaging;
+using Microsoft.EventDrivenWorkflow.Core.Persistence;
 
 namespace Microsoft.EventDrivenWorkflow.Core
 {
-    public class WorkflowEngine
+    public sealed class WorkflowEngine
     {
-        private readonly IAsyncSender<EventMessage> sender;
-
-        private readonly IAsyncObservable<EventMessage> asyncObservable;
-
-        private readonly WorkflowEngineObserver observer;
-
         public WorkflowEngine(
-            WorkflowDefinition workflowDefinition,
-            IActivityFactory activityFactory,
-            IAsyncSender<EventMessage> sender,
+            IMessageProcessor<EventMessage> eventMessageProcessor,
+            IMessageProcessor<ControlMessage> controlMessageProcessor,
+            IMessageSender<EventMessage> eventMessageSender,
+            IMessageSender<ControlMessage> controlMessageSender,
             ISerializer serializer,
-            IAsyncObservable<EventMessage> asyncObservable,
-            IStore<EventKey, EventMessage> eventStore)
+            IStore<EventEntity> eventStore,
+            IStore<ActivityEntity> activityStore)
         {
-            this.WorkflowDefinition = workflowDefinition;
-            this.ActivityFactory = activityFactory;
-            this.sender = sender;
-            this.asyncObservable = asyncObservable;
+            this.EventMessageProcessor = eventMessageProcessor;
+            this.ControlMessageProcessor = controlMessageProcessor;
+            this.EventMessageSender = eventMessageSender;
+            this.ControlMessageSender = controlMessageSender;
             this.Serializer = serializer;
-
-            this.observer = new WorkflowEngineObserver(this);
-
-            EventStore = eventStore;
+            this.EventStore = eventStore;
+            this.ActivityStore = activityStore;
         }
 
-        public WorkflowDefinition WorkflowDefinition { get; }
+        public IMessageProcessor<EventMessage> EventMessageProcessor { get; }
 
-        public IActivityFactory ActivityFactory { get; }
+        public IMessageProcessor<ControlMessage> ControlMessageProcessor { get; }
+
+        public IMessageSender<EventMessage> EventMessageSender { get; }
+
+        public IMessageSender<ControlMessage> ControlMessageSender { get; }
 
         public ISerializer Serializer { get; }
 
-        public IStore<EventKey, EventMessage> EventStore { get; }
+        public IStore<EventEntity> EventStore { get; }
 
-        public Task StartNew()
-        {
-            // TODO: Start the start activity.
-
-            this.asyncObservable.Subscribe(this.observer);
-
-            return Task.CompletedTask;
-        }
-
+        public IStore<ActivityEntity> ActivityStore { get; }
     }
 }

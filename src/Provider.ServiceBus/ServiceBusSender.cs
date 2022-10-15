@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow.Contract.Provider
+namespace Microsoft.EventDrivenWorkflow.Provider.ServiceBus
 {
-    public interface IAsyncSender<T>
+    internal class ServiceBusSender
     {
-        Task Send(T item);
     }
 }
