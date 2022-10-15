@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Contract;
+﻿using Microsoft.EventDrivenWorkflow.Contract;
 using Microsoft.EventDrivenWorkflow.Contract.Definitions;
-using Microsoft.EventDrivenWorkflow.Core.Messaging;
 using Microsoft.EventDrivenWorkflow.Core.Model;
 
 namespace Microsoft.EventDrivenWorkflow.Core
@@ -63,15 +57,16 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
                 var message = new EventMessage
                 {
+                    Id = Guid.NewGuid(),
                     WorkflowExecutionInfo = workflowExecutionInfo,
                     EventName = outputEvent.Name,
                     SourceActivityName = activityDefinition.Name,
-                    SourceActivityExecutionId = activityExecutionContext.ActivityExecutionId,
+                    SourceActivityExecutionId = activityExecutionContext.ActivityExecutionInfo.ActivityExecutionId,
                     PayloadType = payloadType,
                     Payload = payload,
                 };
 
-                await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.Delay);
+                await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.DelayDuration);
             }
         }
 

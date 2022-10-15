@@ -1,6 +1,6 @@
 ﻿using Microsoft.EventDrivenWorkflow.Contract;
 using Microsoft.EventDrivenWorkflow.Contract.Definitions;
-using Microsoft.EventDrivenWorkflow.Core.Messaging;
+using Microsoft.EventDrivenWorkflow.Core.MessageHandlers;
 using Microsoft.EventDrivenWorkflow.Core.Model;
 
 namespace Microsoft.EventDrivenWorkflow.Core
@@ -10,11 +10,9 @@ namespace Microsoft.EventDrivenWorkflow.Core
     /// </summary>
     public sealed class WorkflowOrchestrator : IDisposable
     {
-        private readonly WorkflowEventMessageHandler eventMessageHandler;
+        private readonly EventMessageHandler eventMessageHandler;
 
-        private readonly WorkflowControlMessageHandler controlMessageHandler;
-
-        private readonly ActivityExecutor activityExecutor;
+        private readonly ExecuteActivityMessageHandler executeActivityMessageHandler;
 
         public WorkflowOrchestrator(
             WorkflowEngine engine,
@@ -27,12 +25,12 @@ namespace Microsoft.EventDrivenWorkflow.Core
             this.ActivityFactory = activityFactory;
             this.Options = options;
 
-            this.eventMessageHandler = new WorkflowEventMessageHandler(this);
-            this.controlMessageHandler = new WorkflowControlMessageHandler(this);
+            this.eventMessageHandler = new EventMessageHandler(this);
+            this.executeActivityMessageHandler = new ExecuteActivityMessageHandler(this);
             this.ActivityExecutor = new ActivityExecutor(this);
 
             this.Engine.EventMessageProcessor.Subscribe(this.eventMessageHandler);
-            this.Engine.ControlMessageProcessor.Subscribe(this.controlMessageHandler);
+            this.Engine.ControlMessageProcessor.Subscribe(this.executeActivityMessageHandler);
         }
 
         public WorkflowEngine Engine { get; }
@@ -47,7 +45,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
         public void Dispose()
         {
-            this.Engine.ControlMessageProcessor.Unsubscribe(this.controlMessageHandler);
+            this.Engine.ControlMessageProcessor.Unsubscribe(this.executeActivityMessageHandler);
             this.Engine.EventMessageProcessor.Unsubscribe(this.eventMessageHandler);
         }
 
@@ -63,16 +61,17 @@ namespace Microsoft.EventDrivenWorkflow.Core
             var workflowExecutionInfo = new WorkflowExecutionInfo
             {
                 WorkflowName = this.WorkflowDefinition.Name,
+                WorkflowVersion = this.WorkflowDefinition.Version,
                 PartitionKey = partitionKey ?? string.Empty,
                 WorkflowStartDateTime = DateTime.UtcNow,
-                CreateDateTime = DateTime.UtcNow,
                 WorkflowId = workflowId,
             };
 
             var executeInitializingActivityMessage = new ControlMessage
             {
+                Id = Guid.NewGuid(),
                 WorkflowExecutionInfo = workflowExecutionInfo,
-                ControlType = ControlMessageType.ExecuteActivity,
+                Operation = ControlOperation.ExecuteActivity,
                 TargetActivityName = this.WorkflowDefinition.InitializingActivityDefinition.Name,
             };
 
@@ -83,8 +82,9 @@ namespace Microsoft.EventDrivenWorkflow.Core
             {
                 var trackWorkflowTimeoutMessage = new ControlMessage
                 {
+                    Id = Guid.NewGuid(),
                     WorkflowExecutionInfo = workflowExecutionInfo,
-                    ControlType = ControlMessageType.WorkflowTimeout,
+                    Operation = ControlOperation.WorkflowTimeout,
                 };
 
                 await this.Engine.ControlMessageSender.Send(trackWorkflowTimeoutMessage);

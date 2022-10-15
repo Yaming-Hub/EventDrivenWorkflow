@@ -16,7 +16,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// <summary>
         /// Gets a guid value represents the workflow version.
         /// </summary>
-        public Guid VersionHash { get; init; }
+        public string Version { get; init; }
 
         /// <summary>
         /// Gets the workflow type.

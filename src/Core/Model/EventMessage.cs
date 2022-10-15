@@ -1,6 +1,4 @@
-﻿using Microsoft.EventDrivenWorkflow.Core.Model;
-
-namespace Microsoft.EventDrivenWorkflow.Core.Messaging
+﻿namespace Microsoft.EventDrivenWorkflow.Core.Model
 {
     public class EventMessage : MessageBase
     {

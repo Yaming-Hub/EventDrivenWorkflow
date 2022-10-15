@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Contract;
-using Microsoft.EventDrivenWorkflow.Core.Model;
 
-namespace Microsoft.EventDrivenWorkflow.Core.Messaging
+namespace Microsoft.EventDrivenWorkflow.Core.Model
 {
     public class MessageBase
     {
+        public Guid Id { get; init; }
+
         public WorkflowExecutionInfo WorkflowExecutionInfo { get; init; }
     }
 }

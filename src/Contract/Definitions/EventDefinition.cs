@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
@@ -24,5 +25,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// payload type will be type of <see cref="void"/>.
         /// </summary>
         public Type PayloadType { get; init; }
+
+        public bool HasPayload => this.PayloadType == null || this.PayloadType == typeof(void);
     }
 }

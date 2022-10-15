@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Contract;
 using Microsoft.EventDrivenWorkflow.Contract.Definitions;
@@ -11,35 +13,31 @@ namespace Microsoft.EventDrivenWorkflow.Core
 {
     internal class ActivityExecutionContext : IActivityExecutionContext
     {
-        private readonly IReadOnlyDictionary<string, Event> inputEvents;
+        private readonly IReadOnlyDictionary<string, EventData> inputEvents;
 
-        private readonly Dictionary<string, Event> outputEvents;
+        private readonly Dictionary<string, EventData> outputEvents;
 
         public ActivityExecutionContext(
             WorkflowDefinition workflowDefinition,
             ActivityDefinition activityDefinition,
-            WorkflowExecutionInfo workflowExecutionInfo,
-            Guid activityExecutionId,
-            IReadOnlyDictionary<string, Event> inputEvents)
+            ActivityExecutionInfo activityExecutionInfo,
+            IReadOnlyDictionary<string, EventData> inputEvents)
         {
             this.WorkflowDefinition = workflowDefinition;
             this.ActivityDefinition = activityDefinition;
-            this.WorkflowExecutionInfo = workflowExecutionInfo;
-            this.ActivityExecutionId = activityExecutionId;
+            this.ActivityExecutionInfo = activityExecutionInfo;
 
             this.inputEvents = inputEvents;
-            this.outputEvents = new Dictionary<string, Event>();
+            this.outputEvents = new Dictionary<string, EventData>();
         }
 
         public WorkflowDefinition WorkflowDefinition { get; }
 
         public ActivityDefinition ActivityDefinition { get; }
 
-        public WorkflowExecutionInfo WorkflowExecutionInfo { get; }
+        public ActivityExecutionInfo ActivityExecutionInfo { get; }
 
-        public Guid ActivityExecutionId { get; }
-
-        public T GetEventPayload<T>(string eventName)
+        public T GetInputEventPayload<T>(string eventName)
         {
             if (string.IsNullOrEmpty(eventName))
             {
@@ -48,38 +46,68 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
             if (!this.ActivityDefinition.InputEventDefinitions.Any(e => e.Name == eventName))
             {
-                throw new ArgumentException($"The event name {eventName} is not defined.");
+                throw new ArgumentException($"The input event name {eventName} is not defined.");
             }
 
-            if (!this.inputEvents.TryGetValue(eventName, out var evt))
+            if (!this.inputEvents.TryGetValue(eventName, out var eventData))
             {
                 throw new InvalidOperationException($"The input event {eventName} is not found.");
             }
 
-            return (T)evt.Payload;
+            return (T)eventData.Payload;
         }
 
-        public void PublishEvent(string eventName)
+        public void PublishEvent(params Event[] events)
         {
-            this.PublishEvent(eventName, delay: TimeSpan.Zero);
+            // Do not add to output events directly so in case there is any invalid event
+            // the output events will remain unchanged.
+            var eventDataList = new List<EventData>(events.Length);
+            foreach (var @event in events)
+            {
+                if (string.IsNullOrEmpty(@event.Name))
+                {
+                    throw new ArgumentException("Event must have name");
+                }
+
+                var eventDefinition = this.ActivityDefinition.OutputEventDefinitions.FirstOrDefault(e => e.Name == @event.Name);
+                if (eventDefinition == null)
+                {
+                    throw new ArgumentException($"The output event name {@event.Name} is not defined.");
+                }
+
+                if (this.outputEvents.ContainsKey(@event.Name))
+                {
+                    throw new InvalidOperationException($"The output event {@event.Name} is already published.");
+                }
+
+                object payload = null;
+                if (eventDefinition.PayloadType != null && eventDefinition.PayloadType != typeof(void))
+                {
+                    try
+                    {
+                        payload = @event.GetPayload(eventDefinition.PayloadType);
+                    }
+                    catch (InvalidCastException ice)
+                    {
+                        throw new ArgumentException($"The event {@event.Name} must have payload with type {eventDefinition.PayloadType.FullName}.", ice);
+                    }
+                }
+
+                eventDataList.Add(new EventData
+                {
+                    Name = @event.Name,
+                    Payload = payload,
+                    DelayDuration = @event.DelayDuration,
+                });
+            }
+
+            foreach (var coreEvent in eventDataList)
+            {
+                this.outputEvents.Add(coreEvent.Name, coreEvent);
+            }
         }
 
-        public void PublishEvent<T>(string eventName, T payload)
-        {
-            this.PublishEvent(eventName, payload, delay: TimeSpan.Zero);
-        }
-
-        public void PublishEvent(string eventName, TimeSpan delay)
-        {
-            this.outputEvents[eventName] = new Event { Name = eventName, Delay = delay };
-        }
-
-        public void PublishEvent<T>(string eventName, T payload, TimeSpan delay)
-        {
-            this.outputEvents[eventName] = new Event { Name = eventName, Payload = payload, Delay = delay };
-        }
-
-        internal IEnumerable<Event> GetOutputEvents() => this.outputEvents.Values;
+        internal IEnumerable<EventData> GetOutputEvents() => this.outputEvents.Values;
 
         internal void ValidateInputEvents()
         {

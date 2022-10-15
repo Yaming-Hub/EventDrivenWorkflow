@@ -6,16 +6,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.EventDrivenWorkflow.Core.Model
 {
-    internal class Event
+    internal sealed class EventData
     {
-        public Guid Id { get; set; }
-
-        public string Key { get; set; }
-
         public string Name { get; init; }
 
         public object Payload { get; init; }
 
-        public TimeSpan Delay { get; init; }
+        public TimeSpan DelayDuration { get; init; }
     }
 }

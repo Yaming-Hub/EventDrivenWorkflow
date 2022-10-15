@@ -6,22 +6,21 @@ using System.Threading.Tasks;
 
 namespace Microsoft.EventDrivenWorkflow.Contract.Messaging
 {
-    public class MessageHandleResult
+    public enum MessageHandleResult
     {
-        public MessageHandleResultType ResultType { get; init; }
+        /// <summary>
+        /// The message has been handled completely and should not be further processed.
+        /// </summary>
+        Complete,
 
-        public TimeSpan Delay { get; init; }
+        /// <summary>
+        /// The message has been handled completely but should continue to be processed by other handler.
+        /// </summary>
+        Continue,
 
-        public static readonly MessageHandleResult Completed = new MessageHandleResult
-        {
-            ResultType = MessageHandleResultType.Complete,
-            Delay = TimeSpan.Zero,
-        };
-
-        public static readonly MessageHandleResult Ignore = new MessageHandleResult
-        {
-            ResultType = MessageHandleResultType.Ignore,
-            Delay = TimeSpan.Zero,
-        };
+        /// <summary>
+        /// The message cannot be handled at this moment, should be retried later.
+        /// </summary>
+        Yield,
     }
 }

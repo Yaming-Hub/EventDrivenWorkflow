@@ -4,13 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow.Core.Messaging
+namespace Microsoft.EventDrivenWorkflow.Core.Model
 {
-    public enum ControlMessageType
+    public enum ControlOperation
     {
         ExecuteActivity,
         WorkflowTimeout,
-        MultiInputExecuteCheck,
-        Error
     }
 }

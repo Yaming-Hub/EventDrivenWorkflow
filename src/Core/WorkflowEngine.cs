@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Contract.Messaging;
+﻿using Microsoft.EventDrivenWorkflow.Contract.Messaging;
 using Microsoft.EventDrivenWorkflow.Contract.Persistence;
-using Microsoft.EventDrivenWorkflow.Core.Messaging;
-using Microsoft.EventDrivenWorkflow.Core.Persistence;
+using Microsoft.EventDrivenWorkflow.Core.Model;
 
 namespace Microsoft.EventDrivenWorkflow.Core
 {
@@ -18,8 +12,8 @@ namespace Microsoft.EventDrivenWorkflow.Core
             IMessageSender<EventMessage> eventMessageSender,
             IMessageSender<ControlMessage> controlMessageSender,
             ISerializer serializer,
-            IStore<EventEntity> eventStore,
-            IStore<ActivityEntity> activityStore)
+            IEntityStore<EventEntity> eventStore,
+            IEntityStore<ActivityStateEntity> activityStore)
         {
             this.EventMessageProcessor = eventMessageProcessor;
             this.ControlMessageProcessor = controlMessageProcessor;
@@ -40,8 +34,8 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
         public ISerializer Serializer { get; }
 
-        public IStore<EventEntity> EventStore { get; }
+        public IEntityStore<EventEntity> EventStore { get; }
 
-        public IStore<ActivityEntity> ActivityStore { get; }
+        public IEntityStore<ActivityStateEntity> ActivityStore { get; }
     }
 }

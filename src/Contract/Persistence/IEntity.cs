@@ -8,10 +8,6 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Persistence
 {
     public interface IEntity
     {
-        string PartitionKey { get; init; }
-
-        string PrimaryKey { get; init; }
-
         string ETag { get; init; }
     }
 }

@@ -7,10 +7,7 @@ using Microsoft.EventDrivenWorkflow.Contract.Definitions;
 
 namespace Microsoft.EventDrivenWorkflow.Contract
 {
-    /// <summary>
-    /// This interface defines the execution context information.
-    /// </summary>
-    public interface IActivityExecutionContext
+    public interface IAsyncActivityExecutionContext
     {
         /// <summary>
         /// Gets the workflow definition.
@@ -23,9 +20,9 @@ namespace Microsoft.EventDrivenWorkflow.Contract
         ActivityDefinition ActivityDefinition { get; }
 
         /// <summary>
-        /// Gets activity execution info.
+        /// Gets workflow execution info.
         /// </summary>
-        ActivityExecutionInfo ActivityExecutionInfo { get; }
+        WorkflowExecutionInfo WorkflowExecutionInfo { get; }
 
         /// <summary>
         /// Gets the payload of the event.
@@ -33,12 +30,6 @@ namespace Microsoft.EventDrivenWorkflow.Contract
         /// <typeparam name="T">Type of the payload.</typeparam>
         /// <param name="eventName">The event name.</param>
         /// <returns>The payload.</returns>
-        T GetInputEventPayload<T>(string eventName);
-
-        /// <summary>
-        /// Publish output event.
-        /// </summary>
-        /// <param name="events">The outupt events.</param>
-        void PublishEvent(params Event[] events);
+        T GetEventPayload<T>(string eventName);
     }
 }
