@@ -8,6 +8,8 @@ namespace Microsoft.EventDrivenWorkflow.Core.Model
 {
     internal sealed class EventData
     {
+        public Guid Id { get; init; }
+
         public string Name { get; init; }
 
         public object Payload { get; init; }

@@ -9,6 +9,6 @@ namespace Microsoft.EventDrivenWorkflow.Contract
 {
     public interface IAsyncActivityCompleter
     {
-        Task Complete(WorkflowExecutionInfo workflowExecutionInfo, ActivityExecutionInfo activityExecutionInfo, IEnumerable<Event> outputEvents);
+        Task Complete(ActivityExecutionIdentity activityExecutionId, IEnumerable<Event> outputEvents);
     }
 }

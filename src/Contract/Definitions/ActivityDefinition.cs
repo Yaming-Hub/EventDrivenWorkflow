@@ -17,13 +17,13 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// Gets a list of input event definitions. An activity will only be triggered 
         /// if all defined input events are received.
         /// </summary>
-        public IReadOnlyList<EventDefinition> InputEventDefinitions { get; init; }
+        public IReadOnlyDictionary<string, EventDefinition> InputEventDefinitions { get; init; }
 
         /// <summary>
         /// Gets a list of output event definitions. An activity may publish any number
         /// number of events, the events must be defined in this list.
         /// </summary>
-        public IReadOnlyList<EventDefinition> OutputEventDefinitions { get; init; }
+        public IReadOnlyDictionary<string, EventDefinition> OutputEventDefinitions { get; init; }
 
         /// <summary>
         /// Gets the max time to execute for the activity.

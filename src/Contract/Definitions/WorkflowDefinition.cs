@@ -26,12 +26,12 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// <summary>
         /// Gets a list of events defined in the workflow.
         /// </summary>
-        public IReadOnlyList<EventDefinition> EventDefinitions { get; init; }
+        public IReadOnlyDictionary<string, EventDefinition> EventDefinitions { get; init; }
 
         /// <summary>
         /// Gets a list of activities defined in the workflow.
         /// </summary>
-        public IReadOnlyList<ActivityDefinition> ActivityDefinitions { get; init; }
+        public IReadOnlyDictionary<string, ActivityDefinition> ActivityDefinitions { get; init; }
 
         /// <summary>
         /// Gets the max time to execute for the workflow.
@@ -41,11 +41,11 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// <summary>
         /// Gets the initializing activity definition of the workflow.
         /// </summary>
-        public ActivityDefinition InitializingActivityDefinition => ActivityDefinitions.First(a => a.IsInitializing);
+        public ActivityDefinition InitializingActivityDefinition => this.ActivityDefinitions.Values.First(a => a.IsInitializing);
 
         /// <summary>
         /// Gets the terminating activity definitions of the workflow.
         /// </summary>
-        public IEnumerable<ActivityDefinition> TerminatingActivityDefinitions => ActivityDefinitions.Where(a => a.IsTerminating);
+        public IEnumerable<ActivityDefinition> TerminatingActivityDefinitions => this.ActivityDefinitions.Values.Where(a => a.IsTerminating);
     }
 }

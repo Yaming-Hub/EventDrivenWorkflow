@@ -27,10 +27,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
             }
 
             var workflowDefinition = this.Orchestrator.WorkflowDefinition;
-            var activityDefinition = workflowDefinition.ActivityDefinitions
-                .FirstOrDefault(a => a.InputEventDefinitions.Any(e => e.Name == message.TargetActivityName));
-
-            if (activityDefinition == null)
+            if (!workflowDefinition.ActivityDefinitions.TryGetValue(message.TargetActivityName, out var activityDefinition))
             {
                 // The target activity is not defined. This may happen if the workflow is changed.
                 // TODO: Report unknown event error.
@@ -50,7 +47,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 workflowDefinition,
                 activityDefinition,
                 wei,
-                inputEvents: new Dictionary<string, EventEntity>());
+                inputEvents: new Dictionary<string, EventData>());
 
             return MessageHandleResult.Complete;
         }

@@ -14,7 +14,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract
 
         public DateTime ActivityStartDateTime { get; init; }
 
-        public ActivityExecutionIdentity ActivityExecutionIdentity =>
+        public ActivityExecutionIdentity GetActivityExecutionIdentity() =>
             new ActivityExecutionIdentity
             {
                 PartitionKey = this.PartitionKey,

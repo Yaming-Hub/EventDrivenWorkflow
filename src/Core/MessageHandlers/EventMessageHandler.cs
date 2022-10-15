@@ -52,8 +52,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 return MessageHandleResult.Continue; // Ignore if the event doesn't belong to this workflow.
             }
 
-            var eventDefinition = workflowDefinition.EventDefinitions.FirstOrDefault(ed => ed.Name == message.EventName);
-            if (eventDefinition == null)
+            if (!workflowDefinition.EventDefinitions.TryGetValue(message.EventName, out var eventDefinition))
             {
                 // Got an unknown event. This may happen if the workflow is changed.
                 // TODO: Report unknown event error.
@@ -67,10 +66,10 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            // Find the activity that subscribe to the current event. Please note, there should be exactly
-            // one activity listen to the event.
-            var activityDefinition = workflowDefinition.ActivityDefinitions
-                .FirstOrDefault(a => a.InputEventDefinitions.Any(e => e.Name == message.EventName));
+            // Find the activity that subscribe to the current event. Please note, there should be no more than one activity
+            // subscribe to the same event in the workflow.
+            var activityDefinition = workflowDefinition.ActivityDefinitions.Values
+                .FirstOrDefault(a => a.InputEventDefinitions.ContainsKey(message.EventName));
             if (activityDefinition == null)
             {
                 // There is no activity subscribe to the event
@@ -87,11 +86,11 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 }
             }
 
-            var evt = MapToEvent(message, eventDefinition.PayloadType);
+            var eventData = MapToEventData(message, eventDefinition.PayloadType);
             var wei = message.WorkflowExecutionInfo;
-            var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count)
+            var inputEvents = new Dictionary<string, EventData>(capacity: activityDefinition.InputEventDefinitions.Count)
             {
-                [message.EventName] = evt
+                [message.EventName] = eventData
             };
 
             if (activityDefinition.InputEventDefinitions.Count > 1)
@@ -100,7 +99,14 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 // To solve this problem, an extra activity state is being introduced to track the input event
                 // availability. The events are also persisted in an external storage. Try to load other input 
                 // events and update activity states to see if the activity is ready to execute.
-                var allInputEventsAvailable = await TryLoadInputEvents(workflowDefinition, activityDefinition, wei, evt, inputEvents);
+                var allInputEventsAvailable = await TryLoadInputEvents(
+                    workflowDefinition,
+                    activityDefinition,
+                    wei,
+                    message,
+                    eventData,
+                    inputEvents);
+
                 if (!allInputEventsAvailable)
                 {
                     // The activity is not yet ready to execute.
@@ -122,12 +128,12 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
             WorkflowDefinition workflowDefinition,
             ActivityDefinition activityDefinition,
             WorkflowExecutionInfo wei,
-            Event evt,
-            Dictionary<string, Event> inputEvents)
+            EventMessage message,
+            EventData eventData,
+            Dictionary<string, EventData> inputEvents)
         {
-
             var activityKey = GetActivityKey(wei.WorkflowName, wei.WorkflowId, activityDefinition.Name, wei.PartitionKey);
-            var eventKey = GetEventKey(wei.WorkflowName, wei.WorkflowId, evt.Name, wei.PartitionKey);
+            var eventKey = GetEventKey(wei.WorkflowName, wei.WorkflowId, eventData.Name, wei.PartitionKey);
 
             var activity = await orchestrator.Engine.ActivityStore.GetOrAdd(
                 wei.PartitionKey,
@@ -138,18 +144,27 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                     WorkflowVersion = wei.WorkflowVersion,
                     WorkflowId = wei.WorkflowId,
                     Name = activityDefinition.Name,
-                    AvailableInputEvents = new List<string> { evt.Name }
+                    AvailableInputEvents = new List<string> { eventData.Name }
                 });
 
             // Persist event to store. The event may have already been persisted in case of recurrent activity, here always
             // override existing event.
-            await orchestrator.Engine.EventStore.Upsert(wei.PartitionKey, eventKey, evt);
+            var eventEntity = new EventEntity
+            {
+                Id = eventData.Id,
+                Name = eventData.Name,
+                DelayDuration = eventData.DelayDuration,
+                PayloadType = message.PayloadType,
+                Payload = message.Payload,
+            };
 
-            if (!activity.AvailableInputEvents.Contains(evt.Name))
+            await orchestrator.Engine.EventStore.Upsert(wei.PartitionKey, eventKey, eventEntity);
+
+            if (!activity.AvailableInputEvents.Contains(eventData.Name))
             {
                 // The event is not in the list, that means the activity is fetched from store. Add the event to
                 // activity and try to persist it.
-                activity.AvailableInputEvents.Add(evt.Name);
+                activity.AvailableInputEvents.Add(eventData.Name);
 
                 try
                 {
@@ -161,9 +176,9 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                     // Please note, the code will only try one more time here, if the update operation continue to 
                     // fail, then let the orchestrator to handle it.
                     activity = await orchestrator.Engine.ActivityStore.Get(wei.PartitionKey, activityKey);
-                    if (!activity.AvailableInputEvents.Contains(evt.Name))
+                    if (!activity.AvailableInputEvents.Contains(eventData.Name))
                     {
-                        activity.AvailableInputEvents.Add(evt.Name);
+                        activity.AvailableInputEvents.Add(eventData.Name);
                     }
 
                     await orchestrator.Engine.ActivityStore.Update(wei.PartitionKey, activityKey, activity);
@@ -173,23 +188,31 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
             if (activity.AvailableInputEvents.Count == activityDefinition.InputEventDefinitions.Count)
             {
                 var otherEventKeys = activity.AvailableInputEvents
-                    .Where(n => n != evt.Name)
+                    .Where(n => n != eventData.Name)
                     .Select(n => GetEventKey(wei.WorkflowName, wei.WorkflowId, n, wei.PartitionKey))
                     .ToList();
 
-                var otherEvents = await orchestrator.Engine.EventStore.GetMany(wei.PartitionKey, otherEventKeys);
+                var otherEventEntities = await orchestrator.Engine.EventStore.GetMany(wei.PartitionKey, otherEventKeys);
 
-                foreach (var otherEvent in otherEvents)
+                foreach (var otherEventEntity in otherEventEntities)
                 {
-                    inputEvents[otherEvent.Name] = otherEvent;
+                    // TODO: What happens if the other event is not found or payload type mismatches?
+                    var otherEventDefinition = activityDefinition.InputEventDefinitions[otherEventEntity.Name];
+                    inputEvents[otherEventEntity.Name] = new EventData
+                    {
+                        Id = otherEventEntity.Id,
+                        Name = otherEventEntity.Name,
+                        DelayDuration = otherEventEntity.DelayDuration,
+                        Payload = this.orchestrator.Engine.Serializer.Deserialize(otherEventEntity.Payload, otherEventDefinition.PayloadType),
+                    };
                 }
 
                 if (inputEvents.Count != activity.AvailableInputEvents.Count)
                 {
                     // Some event is missing from event store. This is permanent error and cannot be recovered.
                     var missingEventNames = activity.AvailableInputEvents.Except(inputEvents.Keys);
-                    var message = $"Following events are contained in activity but not in event store: {string.Join(",", missingEventNames)}.";
-                    throw new WorkflowException(isTransient: false, message);
+                    var error = $"Following events are contained in activity but not in event store: {string.Join(",", missingEventNames)}.";
+                    throw new WorkflowException(isTransient: false, error);
                 }
 
                 return true;
@@ -206,13 +229,13 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
         /// <param name="eventMessage">The event message.</param>
         /// <param name="payloadType">Type of the event payload.</param>
         /// <returns>The mapped event.</returns>
-        private Event MapToEvent(EventMessage eventMessage, Type payloadType)
+        private EventData MapToEventData(EventMessage eventMessage, Type payloadType)
         {
             object payload = payloadType == typeof(void)
                 ? null
                 : orchestrator.Engine.Serializer.Deserialize(eventMessage.Payload, payloadType);
 
-            return new Event
+            return new EventData
             {
                 Id = eventMessage.Id,
                 Name = eventMessage.EventName,

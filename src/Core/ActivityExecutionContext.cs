@@ -44,9 +44,16 @@ namespace Microsoft.EventDrivenWorkflow.Core
                 throw new ArgumentException("The event name cannot be null or empty string.", nameof(eventName));
             }
 
-            if (!this.ActivityDefinition.InputEventDefinitions.Any(e => e.Name == eventName))
+            if (!this.ActivityDefinition.InputEventDefinitions.TryGetValue(eventName, out var eventDefinition))
             {
-                throw new ArgumentException($"The input event name {eventName} is not defined.");
+                throw new ArgumentException($"The input event {eventName} is not defined.");
+            }
+
+            if (eventDefinition.PayloadType != typeof(T))
+            {
+                throw new ArgumentException(
+                    $"The input event {eventName} payload type {eventDefinition.PayloadType.FullName} " +
+                    $"is different from the requesting payload type {typeof(T).FullName}.");
             }
 
             if (!this.inputEvents.TryGetValue(eventName, out var eventData))
@@ -69,8 +76,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
                     throw new ArgumentException("Event must have name");
                 }
 
-                var eventDefinition = this.ActivityDefinition.OutputEventDefinitions.FirstOrDefault(e => e.Name == @event.Name);
-                if (eventDefinition == null)
+                if (!this.ActivityDefinition.OutputEventDefinitions.TryGetValue(@event.Name, out var eventDefinition))
                 {
                     throw new ArgumentException($"The output event name {@event.Name} is not defined.");
                 }

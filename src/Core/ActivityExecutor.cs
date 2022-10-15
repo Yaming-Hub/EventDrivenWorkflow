@@ -17,14 +17,16 @@ namespace Microsoft.EventDrivenWorkflow.Core
             WorkflowDefinition workflowDefinition,
             ActivityDefinition activityDefinition,
             WorkflowExecutionInfo workflowExecutionInfo,
-            IReadOnlyDictionary<string, Event> inputEvents)
+            IReadOnlyDictionary<string, EventData> inputEvents)
         {
+            var activityExecutionId = CaculateActivityExecutionId(inputEvents);
+            var activityExecutionInfo = BuildActivtyExecutionInfo(workflowExecutionInfo, activityDefinition, activityExecutionId);
+
             // Now we got all incoming events for the activity, let's run it.
             var activityExecutionContext = new ActivityExecutionContext(
                 workflowDefinition: workflowDefinition,
                 activityDefinition: activityDefinition,
-                workflowExecutionInfo: workflowExecutionInfo,
-                activityExecutionId: CaculateActivityExecutionId(inputEvents),
+                activityExecutionInfo: activityExecutionInfo,
                 inputEvents: inputEvents);
 
             activityExecutionContext.ValidateInputEvents();
@@ -57,7 +59,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
                 var message = new EventMessage
                 {
-                    Id = Guid.NewGuid(),
+                    Id = outputEvent.Id,
                     WorkflowExecutionInfo = workflowExecutionInfo,
                     EventName = outputEvent.Name,
                     SourceActivityName = activityDefinition.Name,
@@ -70,7 +72,25 @@ namespace Microsoft.EventDrivenWorkflow.Core
             }
         }
 
-        private static Guid CaculateActivityExecutionId(IReadOnlyDictionary<string, Event> inputEvents)
+        private static ActivityExecutionInfo BuildActivtyExecutionInfo(
+            WorkflowExecutionInfo workflowExecutionInfo,
+            ActivityDefinition activityDefinition,
+            Guid activityExecutionId)
+        {
+            return new ActivityExecutionInfo
+            {
+                PartitionKey = workflowExecutionInfo.PartitionKey,
+                WorkflowName = workflowExecutionInfo.WorkflowName,
+                WorkflowVersion = workflowExecutionInfo.WorkflowVersion,
+                WorkflowId = workflowExecutionInfo.WorkflowId,
+                WorkflowStartDateTime = workflowExecutionInfo.WorkflowStartDateTime,
+                ActivityName = activityDefinition.Name,
+                ActivityStartDateTime = DateTime.UtcNow,
+                ActivityExecutionId = activityExecutionId
+            };
+        }
+
+        private static Guid CaculateActivityExecutionId(IReadOnlyDictionary<string, EventData> inputEvents)
         {
             throw new NotImplementedException();
         }
