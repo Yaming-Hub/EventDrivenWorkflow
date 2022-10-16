@@ -68,13 +68,11 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
 
             // Find the activity that subscribe to the current event. Please note, there should be no more than one activity
             // subscribe to the same event in the workflow.
-            var activityDefinition = workflowDefinition.ActivityDefinitions.Values
-                .FirstOrDefault(a => a.InputEventDefinitions.ContainsKey(message.EventName));
-            if (activityDefinition == null)
+            if (!workflowDefinition.EventToSubscribedActivityMap.TryGetValue(message.EventName, out var activityDefinition))
             {
                 // This may happen if the workflow is changed.
                 // TODO: Report unsubscribed event error.
-                return MessageHandleResult.Complete;                
+                return MessageHandleResult.Complete;
             }
 
             var eventData = MapToEventData(message, eventDefinition.PayloadType);

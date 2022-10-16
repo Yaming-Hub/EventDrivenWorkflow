@@ -7,16 +7,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.EventDrivenWorkfl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.EventDrivenWorkflow.Core", "Core\Microsoft.EventDrivenWorkflow.Core.csproj", "{8E8E9DCA-4F5E-46DE-9E19-2A5E97BFDF45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Provider.ServiceBus", "Provider.ServiceBus\Microsoft.EventDrivenWorkflow.Provider.ServiceBus.csproj", "{7C81A196-DD40-4DB4-A1D1-39E5223EABD0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.EventDrivenWorkflow.Provider.ServiceBus", "Provider.ServiceBus\Microsoft.EventDrivenWorkflow.Provider.ServiceBus.csproj", "{7C81A196-DD40-4DB4-A1D1-39E5223EABD0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E311B844-E360-43E1-9E35-B671C2B69D3D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Provider.Memory", "Provider.Memory\Microsoft.EventDrivenWorkflow.Provider.Memory.csproj", "{07555793-5BCF-4EB3-83B2-8641D2F0EC2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.EventDrivenWorkflow.Provider.Memory", "Provider.Memory\Microsoft.EventDrivenWorkflow.Provider.Memory.csproj", "{07555793-5BCF-4EB3-83B2-8641D2F0EC2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Core.IntegrationTests", "Core.IntegrationTests\Microsoft.EventDrivenWorkflow.Core.IntegrationTests.csproj", "{0D72C3D7-F500-4129-8308-42481565D251}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.EventDrivenWorkflow.Core.IntegrationTests", "Core.IntegrationTests\Microsoft.EventDrivenWorkflow.Core.IntegrationTests.csproj", "{0D72C3D7-F500-4129-8308-42481565D251}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Contract.UnitTests", "Contract.UnitTests\Microsoft.EventDrivenWorkflow.Contract.UnitTests.csproj", "{83263E79-8B8B-45B2-914A-2F233911946B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{0D72C3D7-F500-4129-8308-42481565D251}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D72C3D7-F500-4129-8308-42481565D251}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D72C3D7-F500-4129-8308-42481565D251}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83263E79-8B8B-45B2-914A-2F233911946B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83263E79-8B8B-45B2-914A-2F233911946B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83263E79-8B8B-45B2-914A-2F233911946B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83263E79-8B8B-45B2-914A-2F233911946B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -30,11 +30,11 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
             this.maxExecutionDuration = TimeSpan.Zero; // unlimited
         }
 
-        public string Name { get; }
+        internal string Name { get; }
 
-        public IReadOnlyList<string> InputEvents => this.inputEvents;
+        internal IReadOnlyList<string> InputEvents => this.inputEvents;
 
-        public IReadOnlyList<string> OutputEvents => this.outputEvents;
+        internal IReadOnlyList<string> OutputEvents => this.outputEvents;
 
 
         public ActivityBuilder Subscribe(string eventName)
@@ -53,7 +53,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
         {
             return new ActivityDefinition
             {
-                Name = $"{parentFullName}.{this.Name}",
+                Name = parentFullName == null ? this.Name : $"{parentFullName}.{this.Name}",
                 InputEventDefinitions = this.ResolveEvent("input", this.inputEvents, events),
                 OutputEventDefinitions = this.ResolveEvent("output", this.outputEvents, events),
                 MaxExecuteDuration = this.maxExecutionDuration,

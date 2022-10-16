@@ -10,7 +10,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
     internal sealed class StringConstraint
     {
         public static readonly StringConstraint Name = new StringConstraint(
-            pattern: "^[a-z][a-z0-9_]*$",
+            pattern: @"^[a-z][a-z0-9_\-]*$",
             ignoreCase: true,
             minLength: 1,
             maxLength: 256);

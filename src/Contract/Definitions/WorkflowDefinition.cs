@@ -49,5 +49,10 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// Gets the terminating activity definitions of the workflow.
         /// </summary>
         public IEnumerable<ActivityDefinition> TerminatingActivityDefinitions => this.ActivityDefinitions.Values.Where(a => a.IsTerminating);
+
+        /// <summary>
+        /// Gets a map from event to subscribed activity.
+        /// </summary>
+        public IReadOnlyDictionary<string, ActivityDefinition> EventToSubscribedActivityMap { get; init; }
     }
 }

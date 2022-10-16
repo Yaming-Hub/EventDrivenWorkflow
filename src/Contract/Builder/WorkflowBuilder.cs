@@ -11,11 +11,11 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
     {
         private readonly List<EventBuilder> eventBuilders;
         private readonly List<ActivityBuilder> activityBuilders;
-        private readonly List<ChildWorkflowBuilder> childWorkflowBuilders;
+        private readonly List<WorkflowBuilder> childWorkflowBuilders;
 
         private TimeSpan maxExecuteDuration;
 
-        internal WorkflowBuilder(string name)
+        public WorkflowBuilder(string name)
         {
             if (StringConstraint.Name.IsValid(name, out string reason))
             {
@@ -25,10 +25,11 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
             this.Name = name;
             this.eventBuilders = new List<EventBuilder>();
             this.activityBuilders = new List<ActivityBuilder>();
+            this.childWorkflowBuilders = new List<WorkflowBuilder>();
             this.maxExecuteDuration = TimeSpan.Zero;
         }
 
-        public string Name { get; }
+        internal string Name { get; }
 
         internal IReadOnlyList<EventBuilder> EventBuilders => this.eventBuilders;
 
@@ -65,11 +66,11 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
             return activityBuilder;
         }
 
-        public ChildWorkflowBuilder AddWorkflow(string name)
+        public WorkflowBuilder AddWorkflow(string name)
         {
             this.EnsureActivityNameIsUnique(name);
 
-            var childWorkflowBuilder = new ChildWorkflowBuilder(name);
+            var childWorkflowBuilder = new WorkflowBuilder(name);
             this.childWorkflowBuilders.Add(childWorkflowBuilder);
             return childWorkflowBuilder;
         }
@@ -82,18 +83,75 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
 
         public WorkflowDefinition Build()
         {
-            return this.Build(this.Name, new Dictionary<string, EventDefinition>());
+            var workflowDefinition = this.Build(null, new Dictionary<string, EventDefinition>());
+
+            if (workflowDefinition.ActivityDefinitions.Count == 0)
+            {
+                throw new InvalidOperationException($"There is no activity defined in workflow {this.Name}.");
+            }
+
+            // Check there is no more than one activity subscribe to the same event.
+            var eventToSubscribedActivityMap = new Dictionary<string, ActivityDefinition>(workflowDefinition.EventDefinitions.Count);
+            foreach (var activityDefinition in workflowDefinition.ActivityDefinitions.Values)
+            {
+                foreach (var inputEventName in activityDefinition.InputEventDefinitions.Keys)
+                {
+                    if (eventToSubscribedActivityMap.ContainsKey(inputEventName))
+                    {
+                        throw new InvalidOperationException(
+                            $"The event {inputEventName} is subscribed by both " +
+                            $"{eventToSubscribedActivityMap[inputEventName].Name} activity " +
+                            $" and {activityDefinition.Name} activity.");
+                    }
+
+                    eventToSubscribedActivityMap.Add(inputEventName, activityDefinition);
+                }
+            }
+
+            // Check every event should be subscribed by one activity.
+            if (eventToSubscribedActivityMap.Count < workflowDefinition.EventDefinitions.Count)
+            {
+                var missingEvents = workflowDefinition.EventDefinitions.Keys.Except(eventToSubscribedActivityMap.Keys).ToList();
+                throw new InvalidOperationException($"There are events not be subscribed: {string.Join(",", missingEvents)}");
+            }
+
+            // Make sure there is one and only one initializing activity.
+            var initializingActivities = workflowDefinition.ActivityDefinitions.Values.Where(a => a.IsInitializing).ToList();
+            if (initializingActivities.Count == 0)
+            {
+                throw new InvalidOperationException($"The workflow {this.Name} has no initializing activity defined.");
+            }
+            else if (initializingActivities.Count > 1)
+            {
+                throw new InvalidOperationException(
+                    $"The workflow {this.Name} has more than one initializing activity defined: " +
+                    $"{string.Join(",", initializingActivities.Select(x => x.Name))}.");
+            }
+
+            // Calculate workflow version.
+            var signature = workflowDefinition.GetSignature();
+            var version = MurmurHash3.HashToString(signature);
+            return new WorkflowDefinition
+            {
+                Name = workflowDefinition.Name,
+                Version = version,
+                EventDefinitions = workflowDefinition.EventDefinitions,
+                ActivityDefinitions = workflowDefinition.ActivityDefinitions,
+                MaxExecuteDuration = this.maxExecuteDuration,
+                EventToSubscribedActivityMap = eventToSubscribedActivityMap,
+            };
         }
 
-        internal WorkflowDefinition Build(string parentFullName, IReadOnlyDictionary<string, EventDefinition> parentEvents)
+        internal WorkflowDefinition Build(string @namespace, IReadOnlyDictionary<string, EventDefinition> parentEvents)
         {
             // Build events first
             var events = this.eventBuilders.Select(eb => eb.Build()).ToDictionary(e => e.Name, e => e);
             var allEvents = events.Concat(parentEvents).ToDictionary(p => p.Key, p => p.Value);
 
-            var activities = this.activityBuilders.Select(ab => ab.Build(parentFullName, allEvents)).ToDictionary(a => a.Name, a => a);
+            var activities = this.activityBuilders.Select(ab => ab.Build(@namespace, allEvents)).ToDictionary(a => a.Name, a => a);
 
-            var childWorkflows = this.childWorkflowBuilders.Select(cwb => cwb.Build(parentFullName, allEvents));
+            var childWorkflows = this.childWorkflowBuilders.Select(cwb => cwb.Build(
+                @namespace == null ? cwb.Name : $"{@namespace}.{cwb.Name}", allEvents));
 
             foreach (var childWorkflow in childWorkflows)
             {
@@ -116,7 +174,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
                 Version = String.Empty,
                 EventDefinitions = events,
                 ActivityDefinitions = activities,
-                MaxExecuteDuration = this.maxExecuteDuration
+                MaxExecuteDuration = TimeSpan.Zero
             };
         }
 

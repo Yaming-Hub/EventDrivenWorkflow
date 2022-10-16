@@ -21,9 +21,9 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Builder
             this.PayloadType = payloadType;
         }
 
-        public string Name { get; }
+        internal string Name { get; }
 
-        public Type PayloadType { get; }
+        internal Type PayloadType { get; }
 
         internal EventDefinition Build()
         {
