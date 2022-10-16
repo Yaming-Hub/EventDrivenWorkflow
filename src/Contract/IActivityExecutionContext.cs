@@ -39,6 +39,9 @@ namespace Microsoft.EventDrivenWorkflow.Contract
         /// Publish output event.
         /// </summary>
         /// <param name="events">The outupt events.</param>
+        /// <remarks>
+        /// This method can only be called from sync activity.
+        /// </remarks>
         void PublishEvent(params Event[] events);
     }
 }

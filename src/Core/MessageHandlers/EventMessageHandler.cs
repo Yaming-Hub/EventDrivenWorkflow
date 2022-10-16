@@ -34,7 +34,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 // TODO: Track exception
                 return we.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
             }
-            catch (Exception e)
+            catch
             {
                 // TODO: Track exception
 
@@ -100,7 +100,6 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 // availability. The events are also persisted in an external storage. Try to load other input 
                 // events and update activity states to see if the activity is ready to execute.
                 var allInputEventsAvailable = await TryLoadInputEvents(
-                    workflowDefinition,
                     activityDefinition,
                     wei,
                     message,
@@ -125,7 +124,6 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
         }
 
         private async Task<bool> TryLoadInputEvents(
-            WorkflowDefinition workflowDefinition,
             ActivityDefinition activityDefinition,
             WorkflowExecutionInfo wei,
             EventMessage message,

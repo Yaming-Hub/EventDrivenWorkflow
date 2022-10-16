@@ -40,7 +40,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 // TODO: Track exception
                 return we.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
             }
-            catch (Exception e)
+            catch
             {
                 // TODO: Track exception
 

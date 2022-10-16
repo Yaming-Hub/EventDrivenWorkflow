@@ -10,7 +10,10 @@ namespace Microsoft.EventDrivenWorkflow.Contract
     /// This interface defines a workflow activity. The activity is the atom
     /// executable operation in the workflow.
     /// </summary>
-    public interface IAsyncActivity
+    /// <remarks>
+    /// Call <see cref="IAsyncActivityCompleter.EndExecute(ActivityExecutionInfo, Event[])"/> to complete async activity.
+    /// </remarks>
+    public interface IAsyncActivity : IAsyncDisposable
     {
         /// <summary>
         /// Execute the activity.
@@ -18,6 +21,6 @@ namespace Microsoft.EventDrivenWorkflow.Contract
         /// <param name="context">The activity execution context.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task represents the async operation.</returns>
-        Task Execute(IActivityExecutionContext context, CancellationToken cancellationToken);
+        Task BeginExecute(IActivityExecutionContext context, CancellationToken cancellationToken);
     }
 }

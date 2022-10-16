@@ -8,6 +8,8 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Persistence
 {
     public interface IEntity
     {
-        string ETag { get; init; }
+        string ETag { get; set; }
+
+        DateTime ExpireDateTime { get; set; }
     }
 }

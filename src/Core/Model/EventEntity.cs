@@ -19,6 +19,8 @@ namespace Microsoft.EventDrivenWorkflow.Core.Model
 
         public TimeSpan DelayDuration { get; init; }
 
-        public string ETag { get; init; }
+        public string ETag { get; set; }
+
+        public DateTime ExpireDateTime { get; set; }
     }
 }

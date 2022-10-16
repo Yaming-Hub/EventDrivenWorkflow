@@ -8,6 +8,11 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Persistence
 {
     public sealed class StoreException : Exception
     {
+        public StoreException(StoreErrorCode errorCode, string message)
+            : this(errorCode, message, innerException: null)
+        {
+        }
+
         public StoreException(StoreErrorCode errorCode, string message, Exception innerException)
             : base(message, innerException)
         {

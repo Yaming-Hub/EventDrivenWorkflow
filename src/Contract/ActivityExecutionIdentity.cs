@@ -15,7 +15,9 @@ namespace Microsoft.EventDrivenWorkflow.Contract
 
         public string WorkflowName { get; init; }
 
-        public Guid WorkflowIdentity { get; init; }
+        public string WorkflowVersion { get; init; }
+
+        public Guid WorkflowId { get; init; }
 
         public string ActivityName { get; init; }
 

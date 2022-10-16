@@ -14,6 +14,11 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         public string Name { get; init; }
 
         /// <summary>
+        /// Gets a value indicates whether the activity is an async activity.
+        /// </summary>
+        public bool IsAsync { get; init; }
+
+        /// <summary>
         /// Gets a list of input event definitions. An activity will only be triggered 
         /// if all defined input events are received.
         /// </summary>

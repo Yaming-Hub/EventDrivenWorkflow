@@ -31,20 +31,20 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
             activityExecutionContext.ValidateInputEvents();
 
-            await using (var activity = this.orchestrator.ActivityFactory.Create(
-                partitionKey: workflowExecutionInfo.PartitionKey, name: activityDefinition.Name))
+            if (activityDefinition.IsAsync)
             {
-                try
-                {
-                    await activity.Execute(activityExecutionContext, CancellationToken.None);
-                }
-                catch
-                {
-                    // TODO (ymliu): Handle exceptions.
-                }
+                await this.ExecuteAsync(activityExecutionContext);
             }
+            else
+            {
+                await this.ExecuteSync(activityExecutionContext);
+            }
+        }
 
+        public async Task PublishOutputEvents(ActivityExecutionContext activityExecutionContext)
+        {
             activityExecutionContext.ValidateOutputEvents();
+            var aei = activityExecutionContext.ActivityExecutionInfo;
 
             // Queue the output events.
             foreach (var outputEvent in activityExecutionContext.GetOutputEvents())
@@ -60,15 +60,51 @@ namespace Microsoft.EventDrivenWorkflow.Core
                 var message = new EventMessage
                 {
                     Id = outputEvent.Id,
-                    WorkflowExecutionInfo = workflowExecutionInfo,
+                    WorkflowExecutionInfo = CopyWorkflowExecutionInfo(aei),
                     EventName = outputEvent.Name,
-                    SourceActivityName = activityDefinition.Name,
-                    SourceActivityExecutionId = activityExecutionContext.ActivityExecutionInfo.ActivityExecutionId,
+                    SourceActivityName = aei.ActivityName,
+                    SourceActivityExecutionId = aei.ActivityExecutionId,
                     PayloadType = payloadType,
                     Payload = payload,
                 };
 
                 await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.DelayDuration);
+            }
+        }
+
+        private async Task ExecuteSync(ActivityExecutionContext activityExecutionContext)
+        {
+            var aei = activityExecutionContext.ActivityExecutionInfo;
+            await using (var activity = this.orchestrator.ActivityFactory.Create(
+                partitionKey: aei.PartitionKey, name: aei.ActivityName))
+            {
+                try
+                {
+                    await activity.Execute(activityExecutionContext, CancellationToken.None);
+                }
+                catch
+                {
+                    // TODO (ymliu): Handle exceptions.
+                }
+            }
+
+            await this.PublishOutputEvents(activityExecutionContext);
+        }
+
+        private async Task ExecuteAsync(ActivityExecutionContext activityExecutionContext)
+        {
+            var aei = activityExecutionContext.ActivityExecutionInfo;
+            await using (var activity = this.orchestrator.ActivityFactory.CreateAsync(
+                partitionKey: aei.PartitionKey, name: aei.ActivityName))
+            {
+                try
+                {
+                    await activity.BeginExecute(activityExecutionContext, CancellationToken.None);
+                }
+                catch
+                {
+                    // TODO (ymliu): Handle exceptions.
+                }
             }
         }
 
@@ -87,6 +123,18 @@ namespace Microsoft.EventDrivenWorkflow.Core
                 ActivityName = activityDefinition.Name,
                 ActivityStartDateTime = DateTime.UtcNow,
                 ActivityExecutionId = activityExecutionId
+            };
+        }
+
+        private static WorkflowExecutionInfo CopyWorkflowExecutionInfo(WorkflowExecutionInfo activityExecutionInfo)
+        {
+            return new WorkflowExecutionInfo
+            {
+                PartitionKey = activityExecutionInfo.PartitionKey,
+                WorkflowName = activityExecutionInfo.WorkflowName,
+                WorkflowVersion = activityExecutionInfo.WorkflowVersion,
+                WorkflowId = activityExecutionInfo.WorkflowId,
+                WorkflowStartDateTime = activityExecutionInfo.WorkflowStartDateTime
             };
         }
 

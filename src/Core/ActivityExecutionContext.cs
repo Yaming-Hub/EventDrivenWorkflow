@@ -66,6 +66,17 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
         public void PublishEvent(params Event[] events)
         {
+            if (this.ActivityDefinition.IsAsync)
+            {
+                throw new InvalidOperationException(
+                    "Cannot publish event from async activity. Use IAsyncActivityCompleter to complete execution.");
+            }
+
+            this.PublishEventInternal(events);
+        }
+
+        internal void PublishEventInternal(params Event[] events)
+        {
             // Do not add to output events directly so in case there is any invalid event
             // the output events will remain unchanged.
             var eventDataList = new List<EventData>(events.Length);

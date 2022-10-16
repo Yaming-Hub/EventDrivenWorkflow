@@ -22,7 +22,8 @@ namespace Microsoft.EventDrivenWorkflow.Core.Model
         /// </summary>
         public List<string> AvailableInputEvents { get; init; }
 
+        public string ETag { get; set; }
 
-        public string ETag { get; init; }
+        public DateTime ExpireDateTime { get; set; }
     }
 }

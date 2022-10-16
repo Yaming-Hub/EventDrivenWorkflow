@@ -11,7 +11,5 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Messaging
         void Subscribe(IMessageHandler<TMessage> handler);
 
         void Unsubscribe(IMessageHandler<TMessage> handler);
-
-        Task Process();
     }
 }

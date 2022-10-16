@@ -10,6 +10,6 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Messaging
     {
         Task Send(TMessage message);
 
-        Task Send(TMessage message, TimeSpan delay);
+        Task Send(TMessage message, TimeSpan delayDuration);
     }
 }

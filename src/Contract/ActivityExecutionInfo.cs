@@ -19,7 +19,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract
             {
                 PartitionKey = this.PartitionKey,
                 WorkflowName = this.WorkflowName,
-                WorkflowIdentity = this.WorkflowId,
+                WorkflowId = this.WorkflowId,
                 ActivityName = this.ActivityName,
                 ActivityExecutionId = this.ActivityExecutionId
             };

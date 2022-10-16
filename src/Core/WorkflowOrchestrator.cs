@@ -27,6 +27,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
             this.eventMessageHandler = new EventMessageHandler(this);
             this.executeActivityMessageHandler = new ExecuteActivityMessageHandler(this);
+            this.AsyncActivityCompleter = new AsyncActivityCompleter(this);
             this.ActivityExecutor = new ActivityExecutor(this);
 
             this.Engine.EventMessageProcessor.Subscribe(this.eventMessageHandler);
@@ -39,9 +40,11 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
         public IActivityFactory ActivityFactory { get; }
 
-        internal ActivityExecutor ActivityExecutor { get; }
+        public IAsyncActivityCompleter AsyncActivityCompleter { get; }
 
         public WorkflowOptions Options { get; }
+
+        internal ActivityExecutor ActivityExecutor { get; }
 
         public void Dispose()
         {
