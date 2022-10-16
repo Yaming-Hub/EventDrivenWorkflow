@@ -3,44 +3,94 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EventDrivenWorkflow.Contract.Definitions;
 
 namespace Microsoft.EventDrivenWorkflow.Contract.Builder
 {
-    public class ActivityBuilder
+    public sealed class ActivityBuilder
     {
-        public ActivityBuilder Subscribe(string eventName)
+        private readonly bool isAsync;
+        private readonly List<string> inputEvents;
+        private readonly List<string> outputEvents;
+
+        private TimeSpan maxExecutionDuration;
+
+        internal ActivityBuilder(string name, bool isAsync = false)
         {
-            throw new NotImplementedException();
+            if (StringConstraint.Name.IsValid(name, out string reason))
+            {
+                throw new ArgumentException($"Activity name {reason}", paramName: nameof(name));
+            }
+
+            this.Name = name;
+            this.isAsync = isAsync;
+
+            this.inputEvents = new List<string>();
+            this.outputEvents = new List<string>();
+            this.maxExecutionDuration = TimeSpan.Zero; // unlimited
         }
 
-        public ActivityBuilder Subscribe<T>(string eventName)
+        public string Name { get; }
+
+        public IReadOnlyList<string> InputEvents => this.inputEvents;
+
+        public IReadOnlyList<string> OutputEvents => this.outputEvents;
+
+
+        public ActivityBuilder Subscribe(string eventName)
         {
-            throw new NotImplementedException();
+            AddEvent(eventName, "input", this.inputEvents);
+            return this;
         }
 
         public ActivityBuilder Publish(string eventName)
         {
-            throw new NotImplementedException();
+            AddEvent(eventName, "output", this.outputEvents);
+            return this;
         }
 
-        public ActivityBuilder Publish(params string[] eventNames)
+        internal ActivityDefinition Build(string parentFullName, IReadOnlyDictionary<string, EventDefinition> events)
         {
-            throw new NotImplementedException();
+            return new ActivityDefinition
+            {
+                Name = $"{parentFullName}.{this.Name}",
+                InputEventDefinitions = this.ResolveEvent("input", this.inputEvents, events),
+                OutputEventDefinitions = this.ResolveEvent("output", this.outputEvents, events),
+                MaxExecuteDuration = this.maxExecutionDuration,
+                IsAsync = this.isAsync,
+            };
         }
 
-        public ActivityBuilder Publish<T>(string eventName)
+        private IReadOnlyDictionary<string, EventDefinition> ResolveEvent(string listName, List<string> list, IReadOnlyDictionary<string, EventDefinition> events)
         {
-            throw new NotImplementedException();
+            var dictionary = new Dictionary<string, EventDefinition>(capacity: list.Count);
+            foreach (var eventName in list)
+            {
+                if (!events.TryGetValue(eventName, out var eventDefinition))
+                {
+                    throw new InvalidOperationException(
+                        $"The {listName} event {eventName} of activity {this.Name} is not defined.");
+                }
+
+                dictionary[eventName] = eventDefinition;
+            }
+
+            return dictionary;
         }
 
-        public ActivityBuilder Publish<T1, T2>(string eventName1, string eventName2)
+        private static void AddEvent(string eventName, string listName, List<string> list)
         {
-            throw new NotImplementedException();
-        }
+            if (eventName == null)
+            {
+                throw new ArgumentNullException(nameof(eventName));
+            }
 
-        public ActivityBuilder Publish<T1, T2, T3>(string eventName1, string eventName2, string eventName3)
-        {
-            throw new NotImplementedException();
+            if (list.Contains(eventName))
+            {
+                throw new InvalidOperationException($"The {listName} event {eventName} already exists.");
+            }
+
+            list.Add(eventName);
         }
     }
 }

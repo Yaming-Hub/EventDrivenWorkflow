@@ -72,18 +72,9 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 .FirstOrDefault(a => a.InputEventDefinitions.ContainsKey(message.EventName));
             if (activityDefinition == null)
             {
-                // There is no activity subscribe to the event
-                if (workflowDefinition.Type == WorkflowType.Close)
-                {
-                    // This may happen if the workflow is changed.
-                    // TODO: Report unsubscribed event error.
-                    return MessageHandleResult.Complete;
-                }
-                else // WorkflowType.Open
-                {
-                    // TODO: Add the event into output event list of the open workflow.
-                    throw new NotImplementedException();
-                }
+                // This may happen if the workflow is changed.
+                // TODO: Report unsubscribed event error.
+                return MessageHandleResult.Complete;                
             }
 
             var eventData = MapToEventData(message, eventDefinition.PayloadType);
@@ -229,7 +220,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
         /// <returns>The mapped event.</returns>
         private EventData MapToEventData(EventMessage eventMessage, Type payloadType)
         {
-            object payload = payloadType == typeof(void)
+            object payload = payloadType == null
                 ? null
                 : orchestrator.Engine.Serializer.Deserialize(eventMessage.Payload, payloadType);
 

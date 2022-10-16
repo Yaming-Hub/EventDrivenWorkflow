@@ -9,6 +9,13 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
     public sealed class ActivityDefinition
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="ActivityDefinition"/> class.
+        /// </summary>
+        internal ActivityDefinition()
+        {
+        }
+
+        /// <summary>
         /// Gets the name of activity definition.
         /// </summary>
         public string Name { get; init; }

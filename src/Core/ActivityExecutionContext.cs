@@ -68,8 +68,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
         {
             if (this.ActivityDefinition.IsAsync)
             {
-                throw new InvalidOperationException(
-                    "Cannot publish event from async activity. Use IAsyncActivityCompleter to complete execution.");
+                throw new InvalidOperationException("Events can only published for synchronized activity.");
             }
 
             this.PublishEventInternal(events);
@@ -98,7 +97,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
                 }
 
                 object payload = null;
-                if (eventDefinition.PayloadType != null && eventDefinition.PayloadType != typeof(void))
+                if (eventDefinition.PayloadType != null)
                 {
                     try
                     {

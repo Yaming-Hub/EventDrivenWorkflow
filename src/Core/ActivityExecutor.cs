@@ -49,10 +49,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
             // Queue the output events.
             foreach (var outputEvent in activityExecutionContext.GetOutputEvents())
             {
-                string payloadType = outputEvent.Payload == null
-                    ? typeof(void).FullName
-                    : outputEvent.Payload.GetType().FullName;
-
+                string payloadType = outputEvent.Payload?.GetType()?.FullName;
                 byte[] payload = outputEvent.Payload == null
                     ? null
                     : this.orchestrator.Engine.Serializer.Serialize(outputEvent.Payload);

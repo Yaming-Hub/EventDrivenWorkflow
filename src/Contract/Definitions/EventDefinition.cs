@@ -16,6 +16,13 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
     public class EventDefinition
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="EventDefinition"/> class.
+        /// </summary>
+        internal EventDefinition()
+        {
+        }
+
+        /// <summary>
         /// Gets name of the event. The event name must be unique in a workflow.
         /// </summary>
         public string Name { get; init; }
@@ -26,6 +33,6 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// </summary>
         public Type PayloadType { get; init; }
 
-        public bool HasPayload => this.PayloadType == null || this.PayloadType == typeof(void);
+        public bool HasPayload => this.PayloadType == null;
     }
 }

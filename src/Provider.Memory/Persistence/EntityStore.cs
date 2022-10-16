@@ -8,7 +8,7 @@ using Microsoft.EventDrivenWorkflow.Contract.Persistence;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.EventDrivenWorkflow.Providers.Memory.Persistence
+namespace Microsoft.EventDrivenWorkflow.Provider.Memory.Persistence
 {
     public class EntityStore<TEntity> : IEntityStore<TEntity>
         where TEntity : IEntity

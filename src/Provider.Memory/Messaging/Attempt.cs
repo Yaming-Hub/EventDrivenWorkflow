@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow.Providers.Memory.Messaging
+namespace Microsoft.EventDrivenWorkflow.Provider.Memory.Messaging
 {
     internal class Attempt<T>
     {

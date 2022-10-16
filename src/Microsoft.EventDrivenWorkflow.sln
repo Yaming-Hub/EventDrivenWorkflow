@@ -14,7 +14,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Providers.Memory", "Providers.Memory\Microsoft.EventDrivenWorkflow.Providers.Memory.csproj", "{07555793-5BCF-4EB3-83B2-8641D2F0EC2B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Provider.Memory", "Provider.Memory\Microsoft.EventDrivenWorkflow.Provider.Memory.csproj", "{07555793-5BCF-4EB3-83B2-8641D2F0EC2B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.EventDrivenWorkflow.Core.IntegrationTests", "Core.IntegrationTests\Microsoft.EventDrivenWorkflow.Core.IntegrationTests.csproj", "{0D72C3D7-F500-4129-8308-42481565D251}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +40,10 @@ Global
 		{07555793-5BCF-4EB3-83B2-8641D2F0EC2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07555793-5BCF-4EB3-83B2-8641D2F0EC2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07555793-5BCF-4EB3-83B2-8641D2F0EC2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D72C3D7-F500-4129-8308-42481565D251}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D72C3D7-F500-4129-8308-42481565D251}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D72C3D7-F500-4129-8308-42481565D251}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D72C3D7-F500-4129-8308-42481565D251}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

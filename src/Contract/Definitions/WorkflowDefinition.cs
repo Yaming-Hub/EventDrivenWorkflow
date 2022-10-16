@@ -9,6 +9,13 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
     public sealed class WorkflowDefinition
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="WorkflowDefinition"/> class.
+        /// </summary>
+        internal WorkflowDefinition()
+        {
+        }
+
+        /// <summary>
         /// Gets the name of the workflow.
         /// </summary>
         public string Name { get; init; }
@@ -17,11 +24,6 @@ namespace Microsoft.EventDrivenWorkflow.Contract.Definitions
         /// Gets a guid value represents the workflow version.
         /// </summary>
         public string Version { get; init; }
-
-        /// <summary>
-        /// Gets the workflow type.
-        /// </summary>
-        public WorkflowType Type { get; init; }
 
         /// <summary>
         /// Gets a list of events defined in the workflow.

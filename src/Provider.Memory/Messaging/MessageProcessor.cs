@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Contract.Messaging;
 
-namespace Microsoft.EventDrivenWorkflow.Providers.Memory.Messaging
+namespace Microsoft.EventDrivenWorkflow.Provider.Memory.Messaging
 {
     public sealed class MessageProcessor<TMessage> : IMessageProcessor<TMessage>
     {

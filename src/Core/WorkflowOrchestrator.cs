@@ -54,11 +54,6 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
         public async Task<Guid> StartNew(string partitionKey)
         {
-            if (this.WorkflowDefinition.Type == WorkflowType.Open)
-            {
-                throw new InvalidOperationException("A open workflow cannot start by itself.");
-            }
-
             Guid workflowId = Guid.NewGuid();
 
             var workflowExecutionInfo = new WorkflowExecutionInfo
