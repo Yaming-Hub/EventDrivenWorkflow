@@ -14,11 +14,11 @@ namespace Microsoft.EventDrivenWorkflow.Core
         /// definition to avoid unexpected behavior. The previous workflow may timeout as events are
         /// ignored.
         /// </summary>
-        public bool IgnoreEventIfVersionMismatches { get; init; }
+        public bool IgnoreEventIfVersionMismatches { get; init; } = false;
 
         /// <summary>
         /// Gets a value indicates whether to track finish and timeout for the workflow.
         /// </summary>
-        public bool TrackWorkflow { get; init; }
+        public bool TrackWorkflow { get; init; } = false;
     }
 }

@@ -13,7 +13,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract
     /// <remarks>
     /// Call <see cref="IAsyncActivityCompleter.EndExecute(ActivityExecutionInfo, Event[])"/> to complete async activity.
     /// </remarks>
-    public interface IAsyncActivity : IAsyncDisposable
+    public interface IAsyncActivity
     {
         /// <summary>
         /// Execute the activity.

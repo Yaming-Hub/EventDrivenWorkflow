@@ -67,21 +67,52 @@ namespace Microsoft.EventDrivenWorkflow.Core
 
                 await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.DelayDuration);
             }
+
+            // TODO: If the workflow is being tracked and there is no output event published
+            //       by the current activity. This is one terminating operation, and we should
+            //       check if there is any pending events. If there is no pending events other
+            //       than the current one, then we can consider workflow as completed. This 
+            //       should also work for async activity.
         }
 
         private async Task ExecuteSync(ActivityExecutionContext activityExecutionContext)
         {
             var aei = activityExecutionContext.ActivityExecutionInfo;
-            await using (var activity = this.orchestrator.ActivityFactory.Create(
-                partitionKey: aei.PartitionKey, name: aei.ActivityName))
+
+            var activity = this.orchestrator.ActivityFactory.CreateActivity(
+                partitionKey: aei.PartitionKey, name: aei.ActivityName);
+
+            try
             {
-                try
+                await activity.Execute(activityExecutionContext, CancellationToken.None);
+            }
+            catch
+            {
+                // TODO (ymliu): Handle exceptions.
+            }
+            finally
+            {
+                if (activity is IDisposable disposable)
                 {
-                    await activity.Execute(activityExecutionContext, CancellationToken.None);
+                    try
+                    {
+                        disposable.Dispose();
+                    }
+                    catch
+                    {
+                        // Ignore dispose exceptions
+                    }
                 }
-                catch
+                else if (activity is IAsyncDisposable asyncDisposable)
                 {
-                    // TODO (ymliu): Handle exceptions.
+                    try
+                    {
+                        await asyncDisposable.DisposeAsync();
+                    }
+                    catch
+                    {
+                        // Ignore dispose exceptions
+                    }
                 }
             }
 
@@ -91,16 +122,41 @@ namespace Microsoft.EventDrivenWorkflow.Core
         private async Task ExecuteAsync(ActivityExecutionContext activityExecutionContext)
         {
             var aei = activityExecutionContext.ActivityExecutionInfo;
-            await using (var activity = this.orchestrator.ActivityFactory.CreateAsync(
-                partitionKey: aei.PartitionKey, name: aei.ActivityName))
+
+            var activity = this.orchestrator.ActivityFactory.CreateAsyncActivity(
+                partitionKey: aei.PartitionKey, name: aei.ActivityName);
+
+            try
             {
-                try
+                await activity.BeginExecute(activityExecutionContext, CancellationToken.None);
+            }
+            catch
+            {
+                // TODO (ymliu): Handle exceptions.
+            }
+            finally
+            {
+                if (activity is IDisposable disposable)
                 {
-                    await activity.BeginExecute(activityExecutionContext, CancellationToken.None);
+                    try
+                    {
+                        disposable.Dispose();
+                    }
+                    catch
+                    {
+                        // Ignore dispose exceptions
+                    }
                 }
-                catch
+                else if (activity is IAsyncDisposable asyncDisposable)
                 {
-                    // TODO (ymliu): Handle exceptions.
+                    try
+                    {
+                        await asyncDisposable.DisposeAsync();
+                    }
+                    catch
+                    {
+                        // Ignore dispose exceptions
+                    }
                 }
             }
         }

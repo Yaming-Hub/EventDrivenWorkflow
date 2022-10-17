@@ -13,15 +13,5 @@ namespace Microsoft.EventDrivenWorkflow.Contract
         public Guid ActivityExecutionId { get; init; }
 
         public DateTime ActivityStartDateTime { get; init; }
-
-        public ActivityExecutionIdentity GetActivityExecutionIdentity() =>
-            new ActivityExecutionIdentity
-            {
-                PartitionKey = this.PartitionKey,
-                WorkflowName = this.WorkflowName,
-                WorkflowId = this.WorkflowId,
-                ActivityName = this.ActivityName,
-                ActivityExecutionId = this.ActivityExecutionId
-            };
     }
 }

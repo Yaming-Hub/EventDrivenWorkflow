@@ -12,8 +12,8 @@ namespace Microsoft.EventDrivenWorkflow.Contract
     /// </summary>
     public interface IActivityFactory
     {
-        IActivity Create(string partitionKey, string name);
+        IActivity CreateActivity(string partitionKey, string name);
 
-        IAsyncActivity CreateAsync(string partitionKey, string name);
+        IAsyncActivity CreateAsyncActivity(string partitionKey, string name);
     }
 }

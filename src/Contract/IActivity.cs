@@ -10,7 +10,7 @@ namespace Microsoft.EventDrivenWorkflow.Contract
     /// This interface defines a workflow activity. The activity is the atom
     /// executable operation in the workflow.
     /// </summary>
-    public interface IActivity : IAsyncDisposable
+    public interface IActivity
     {
         /// <summary>
         /// Execute the activity.
