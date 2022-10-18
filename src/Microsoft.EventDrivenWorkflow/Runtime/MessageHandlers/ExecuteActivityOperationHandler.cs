@@ -4,20 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Messaging;
-using Microsoft.EventDrivenWorkflow.Core.Model;
+using Microsoft.EventDrivenWorkflow.Runtime.Model;
 
-namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
+namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 {
-    internal class ExecuteActivityMessageHandler : ControlMessageHandlerBase
+    internal class ExecuteActivityOperationHandler : IControlOperationHandler
     {
-        public ExecuteActivityMessageHandler(WorkflowOrchestrator orchestrator)
-            : base(orchestrator)
-        {
-        }
-
-        protected override ControlOperation Operation => ControlOperation.ExecuteActivity;
-
-        protected override async Task<MessageHandleResult> HandleInternal(ControlMessage message)
+        public async Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, ControlMessage message)
         {
             if (string.IsNullOrEmpty(message.TargetActivityName))
             {
@@ -26,7 +19,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            var workflowDefinition = this.Orchestrator.WorkflowDefinition;
+            var workflowDefinition = orchestrator.WorkflowDefinition;
             if (!workflowDefinition.ActivityDefinitions.TryGetValue(message.TargetActivityName, out var activityDefinition))
             {
                 // The target activity is not defined. This may happen if the workflow is changed.
@@ -43,7 +36,7 @@ namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
             }
 
             var wei = message.WorkflowExecutionInfo;
-            await this.Orchestrator.ActivityExecutor.Execute(
+            await orchestrator.ActivityExecutor.Execute(
                 workflowDefinition,
                 activityDefinition,
                 wei,

@@ -1,26 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="IAsyncActivity.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow
 {
+    using Microsoft.EventDrivenWorkflow.Runtime;
+
     /// <summary>
-    /// This interface defines a workflow activity. The activity is the atom
-    /// executable operation in the workflow.
+    /// This interface defines an asynchronous activity. The asynchronous activity is useful when the
+    /// activity triggers an external operation and rely on callback of the external system to complete.
+    /// For example, if the activity startds an Azure Data Factory pipeline, upon completion the ADF
+    /// pipeline notifies the application. In this case, the notification handler will call workflow
+    /// orchestrator to complete the activity and move on.
     /// </summary>
-    /// <remarks>
-    /// Call <see cref="IAsyncActivityCompleter.EndExecute(ActivityExecutionInfo, Event[])"/> to complete async activity.
-    /// </remarks>
     public interface IAsyncActivity
     {
         /// <summary>
-        /// Execute the activity.
+        /// Begin execute the activity, the activity will remain executing after this event completes.
+        /// Use <see cref="WorkflowOrchestrator.EndExecute(ActivityExecutionInfo, Event[])"/> method to 
+        /// complete the event execution.
         /// </summary>
         /// <param name="context">The activity execution context.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task represents the async operation.</returns>
-        Task BeginExecute(IActivityExecutionContext context, CancellationToken cancellationToken);
+        Task BeginExecute(ActivityExecutionContext context, CancellationToken cancellationToken);
     }
 }

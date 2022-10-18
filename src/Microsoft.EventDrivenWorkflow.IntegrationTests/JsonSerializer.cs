@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Persistence;
 using System.Text.Json;
 
-namespace Microsoft.EventDrivenWorkflow.Core.IntegrationTests
+namespace Microsoft.EventDrivenWorkflow.Runtime.IntegrationTests
 {
     internal class TestJsonSerializer : ISerializer
     {

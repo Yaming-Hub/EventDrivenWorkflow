@@ -1,8 +1,7 @@
-﻿using Microsoft.EventDrivenWorkflow;
-using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.Core.Model;
+﻿using Microsoft.EventDrivenWorkflow.Definitions;
+using Microsoft.EventDrivenWorkflow.Runtime.Model;
 
-namespace Microsoft.EventDrivenWorkflow.Core
+namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     internal class ActivityExecutor
     {
@@ -79,8 +78,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
         {
             var aei = activityExecutionContext.ActivityExecutionInfo;
 
-            var activity = this.orchestrator.ActivityFactory.CreateActivity(
-                partitionKey: aei.PartitionKey, name: aei.ActivityName);
+            var activity = this.orchestrator.ActivityFactory.CreateActivity(aei.ActivityName);
 
             try
             {
@@ -123,8 +121,7 @@ namespace Microsoft.EventDrivenWorkflow.Core
         {
             var aei = activityExecutionContext.ActivityExecutionInfo;
 
-            var activity = this.orchestrator.ActivityFactory.CreateAsyncActivity(
-                partitionKey: aei.PartitionKey, name: aei.ActivityName);
+            var activity = this.orchestrator.ActivityFactory.CreateAsyncActivity(aei.ActivityName);
 
             try
             {

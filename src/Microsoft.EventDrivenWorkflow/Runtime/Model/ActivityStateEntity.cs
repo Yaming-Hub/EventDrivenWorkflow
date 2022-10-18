@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Persistence;
 
-namespace Microsoft.EventDrivenWorkflow.Core.Model
+namespace Microsoft.EventDrivenWorkflow.Runtime.Model
 {
     public class ActivityStateEntity : IEntity
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow.Core.Model
+namespace Microsoft.EventDrivenWorkflow.Runtime.Model
 {
     internal sealed class EventData
     {

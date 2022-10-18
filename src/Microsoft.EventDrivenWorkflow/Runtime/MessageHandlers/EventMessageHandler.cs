@@ -1,10 +1,9 @@
-﻿using Microsoft.EventDrivenWorkflow;
-using Microsoft.EventDrivenWorkflow.Definitions;
+﻿using Microsoft.EventDrivenWorkflow.Definitions;
 using Microsoft.EventDrivenWorkflow.Messaging;
 using Microsoft.EventDrivenWorkflow.Persistence;
-using Microsoft.EventDrivenWorkflow.Core.Model;
+using Microsoft.EventDrivenWorkflow.Runtime.Model;
 
-namespace Microsoft.EventDrivenWorkflow.Core.MessageHandlers
+namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 {
     internal sealed class EventMessageHandler : IMessageHandler<EventMessage>
     {

@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using Microsoft.EventDrivenWorkflow;
 using Microsoft.EventDrivenWorkflow.Builder;
-using Microsoft.EventDrivenWorkflow.Core;
-using Microsoft.EventDrivenWorkflow.Core.IntegrationTests;
-using Microsoft.EventDrivenWorkflow.Core.Model;
+using Microsoft.EventDrivenWorkflow.Runtime;
+using Microsoft.EventDrivenWorkflow.Runtime.IntegrationTests;
+using Microsoft.EventDrivenWorkflow.Runtime.Model;
 using Microsoft.EventDrivenWorkflow.Memory.Messaging;
 using Microsoft.EventDrivenWorkflow.Memory.Persistence;
 
@@ -14,7 +14,7 @@ namespace Core.IntegrationTests
     {
         public class LogActivity : IActivity
         {
-            public Task Execute(IActivityExecutionContext context, CancellationToken cancellationToken)
+            public Task Execute(ActivityExecutionContext context, CancellationToken cancellationToken)
             {
                 var aei = context.ActivityExecutionInfo;
                 Trace.WriteLine($"{aei.WorkflowName}/{aei.WorkflowId}/activities/{aei.ActivityName}/{aei.ActivityExecutionId}[{aei.PartitionKey}]");
@@ -24,12 +24,12 @@ namespace Core.IntegrationTests
 
         public class LogActivityFactory : IActivityFactory
         {
-            public IActivity CreateActivity(string partitionKey, string name)
+            public IActivity CreateActivity(string name)
             {
                 return new LogActivity();
             }
 
-            public IAsyncActivity CreateAsyncActivity(string partitionKey, string name)
+            public IAsyncActivity CreateAsyncActivity(string name)
             {
                 throw new NotImplementedException();
             }
@@ -50,7 +50,7 @@ namespace Core.IntegrationTests
             var workflowDefinition = builder.Build();
 
             var activityFactory = new LogActivityFactory();
-            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowOptions());
+            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowOrchestrationOptions());
 
             return Task.CompletedTask;
         }

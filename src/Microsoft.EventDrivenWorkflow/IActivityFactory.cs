@@ -1,19 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="IActivityFactory.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow
 {
     /// <summary>
-    /// This interface defines a factory which creates activity by name. Each
-    /// workflow will have it's own activity factory.
+    /// This interface defines a factory which creates activities of a workflow.
     /// </summary>
     public interface IActivityFactory
     {
-        IActivity CreateActivity(string partitionKey, string name);
+        /// <summary>
+        /// Creates a synchronous activity.
+        /// </summary>
+        /// <param name="name">The activity name.</param>
+        /// <returns>The synchronous activity instance.</returns>
+        IActivity CreateActivity(string name);
 
-        IAsyncActivity CreateAsyncActivity(string partitionKey, string name);
+        /// <summary>
+        /// Creates an asynchronous activity.
+        /// </summary>
+        /// <param name="name">The activity name.</param>
+        /// <returns>The asynchronous activity instance.</returns>
+        IAsyncActivity CreateAsyncActivity(string name);
     }
 }

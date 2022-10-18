@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow
+namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     public sealed class ActivityExecutionInfo : WorkflowExecutionInfo
     {

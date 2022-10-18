@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="IActivity.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow
 {
+    using Microsoft.EventDrivenWorkflow.Runtime;
+
     /// <summary>
-    /// This interface defines a workflow activity. The activity is the atom
-    /// executable operation in the workflow.
+    /// This interface defines a workflow activity. The activity is the atom operation in a workflow.
     /// </summary>
     public interface IActivity
     {
@@ -18,6 +19,6 @@ namespace Microsoft.EventDrivenWorkflow
         /// <param name="context">The activity execution context.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task represents the async operation.</returns>
-        Task Execute(IActivityExecutionContext context, CancellationToken cancellationToken);
+        Task Execute(ActivityExecutionContext context, CancellationToken cancellationToken);
     }
 }

@@ -1,8 +1,8 @@
 ﻿using Microsoft.EventDrivenWorkflow.Messaging;
 using Microsoft.EventDrivenWorkflow.Persistence;
-using Microsoft.EventDrivenWorkflow.Core.Model;
+using Microsoft.EventDrivenWorkflow.Runtime.Model;
 
-namespace Microsoft.EventDrivenWorkflow.Core
+namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     public sealed class WorkflowEngine
     {

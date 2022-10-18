@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.EventDrivenWorkflow
+namespace Microsoft.EventDrivenWorkflow.Utilities
 {
     /// <summary>
     /// This code is public domain. Reference source: http://blog.teamleadnet.com/2012/08/murmurhash3-ultra-fast-hash-algorithm.html
@@ -109,7 +109,7 @@ namespace Microsoft.EventDrivenWorkflow
         /// <returns>Hash for the string as a byte[] of length byteLength.</returns>
         public static byte[] HashToBytes(string stringToEncode, int byteLength)
         {
-            var hashedBytes = MurmurHash3.Hash(stringToEncode);
+            var hashedBytes = Hash(stringToEncode);
             var resultantBytes = new byte[byteLength];
             for (int i = 0; i < hashedBytes.Length; i++)
             {
@@ -169,7 +169,7 @@ namespace Microsoft.EventDrivenWorkflow
         /// <returns>The return value.</returns>
         private static ulong RotateLeft(ulong original, int bits)
         {
-            return (original << bits) | (original >> (64 - bits));
+            return original << bits | original >> 64 - bits;
         }
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace Microsoft.EventDrivenWorkflow
 
             byte[] stringBytes = Encoding.UTF8.GetBytes(stringToEncode);
 
-            this.h1 = Seed;
+            h1 = Seed;
 
             int pos = 0;
             ulong length = (ulong)stringBytes.Length;
@@ -219,31 +219,31 @@ namespace Microsoft.EventDrivenWorkflow
 
                 remaining -= READSIZE;
 
-                this.MixBody(k1, k2);
+                MixBody(k1, k2);
             }
 
             // if the input MOD 16 != 0
             if (remaining > 0)
             {
-                this.ProcessBytesRemaining(stringBytes, remaining, pos, stringToEncode);
+                ProcessBytesRemaining(stringBytes, remaining, pos, stringToEncode);
             }
 
-            this.h1 ^= length;
-            this.h2 ^= length;
+            h1 ^= length;
+            h2 ^= length;
 
-            this.h1 += this.h2;
-            this.h2 += this.h1;
+            h1 += h2;
+            h2 += h1;
 
-            this.h1 = MixFinal(this.h1);
-            this.h2 = MixFinal(this.h2);
+            h1 = MixFinal(h1);
+            h2 = MixFinal(h2);
 
-            this.h1 += this.h2;
-            this.h2 += this.h1;
+            h1 += h2;
+            h2 += h1;
 
-            var hash = new byte[MurmurHash3.READSIZE];
+            var hash = new byte[READSIZE];
 
-            Array.Copy(BitConverter.GetBytes(this.h1), 0, hash, 0, 8);
-            Array.Copy(BitConverter.GetBytes(this.h2), 0, hash, 8, 8);
+            Array.Copy(BitConverter.GetBytes(h1), 0, hash, 0, 8);
+            Array.Copy(BitConverter.GetBytes(h2), 0, hash, 8, 8);
 
             return hash;
         }
@@ -281,7 +281,7 @@ namespace Microsoft.EventDrivenWorkflow
                     k2 ^= (ulong)bb[pos + 9] << 8; // fall through
                     goto case 9;
                 case 9:
-                    k2 ^= (ulong)bb[pos + 8]; // fall through
+                    k2 ^= bb[pos + 8]; // fall through
                     goto case 8;
                 case 8:
                     k1 ^= GetUInt64(bb, pos);
@@ -305,15 +305,15 @@ namespace Microsoft.EventDrivenWorkflow
                     k1 ^= (ulong)bb[pos + 1] << 8; // fall through
                     goto case 1;
                 case 1:
-                    k1 ^= (ulong)bb[pos]; // fall through
+                    k1 ^= bb[pos]; // fall through
                     break;
                 default:
                     throw new ApplicationException("Hash calculation failed for string " + stringToEncode);
             }
 
             // This is implementation of pseudocode from wikipedia. It does not need MixBody here. 
-            this.h1 ^= MixKey1(k1);
-            this.h2 ^= MixKey2(k2);
+            h1 ^= MixKey1(k1);
+            h2 ^= MixKey2(k2);
         }
 
         /// <summary>
@@ -323,17 +323,17 @@ namespace Microsoft.EventDrivenWorkflow
         /// <param name="k2">Second value.</param>
         private void MixBody(ulong k1, ulong k2)
         {
-            this.h1 ^= MixKey1(k1);
+            h1 ^= MixKey1(k1);
 
-            this.h1 = RotateLeft(this.h1, 27);
-            this.h1 += this.h2;
-            this.h1 = (this.h1 * 5) + 0x52dce729;
+            h1 = RotateLeft(h1, 27);
+            h1 += h2;
+            h1 = h1 * 5 + 0x52dce729;
 
-            this.h2 ^= MixKey2(k2);
+            h2 ^= MixKey2(k2);
 
-            this.h2 = RotateLeft(this.h2, 31);
-            this.h2 += this.h1;
-            this.h2 = (this.h2 * 5) + 0x38495ab5;
+            h2 = RotateLeft(h2, 31);
+            h2 += h1;
+            h2 = h2 * 5 + 0x38495ab5;
         }
     }
 }

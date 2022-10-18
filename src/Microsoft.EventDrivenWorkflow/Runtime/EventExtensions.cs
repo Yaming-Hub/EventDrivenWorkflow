@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow;
 
-namespace Microsoft.EventDrivenWorkflow.Core
+namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     internal static class EventExtensions
     {

@@ -1,23 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow;
-using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.Core.Model;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="IAsyncActivity.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
-namespace Microsoft.EventDrivenWorkflow.Core
+namespace Microsoft.EventDrivenWorkflow.Runtime
 {
-    internal class ActivityExecutionContext : IActivityExecutionContext
+    using Microsoft.EventDrivenWorkflow.Definitions;
+    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+
+    /// <summary>
+    /// This class defines the execution context of an activity.
+    /// </summary>
+    public sealed class ActivityExecutionContext
     {
+        /// <summary>
+        /// A dictionary contains input events.
+        /// </summary>
         private readonly IReadOnlyDictionary<string, EventData> inputEvents;
 
+        /// <summary>
+        /// A dictionary contains output events.
+        /// </summary>
         private readonly Dictionary<string, EventData> outputEvents;
 
-        public ActivityExecutionContext(
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ActivityExecutionContext"/> class.
+        /// </summary>
+        /// <param name="workflowDefinition">The execiting workflow definition.</param>
+        /// <param name="activityDefinition">The execiting activity definition.</param>
+        /// <param name="activityExecutionInfo">The activity execution information.</param>
+        /// <param name="inputEvents">A dictionary contains input events of the execiting activity.</param>
+        internal ActivityExecutionContext(
             WorkflowDefinition workflowDefinition,
             ActivityDefinition activityDefinition,
             ActivityExecutionInfo activityExecutionInfo,
@@ -31,12 +45,27 @@ namespace Microsoft.EventDrivenWorkflow.Core
             this.outputEvents = new Dictionary<string, EventData>();
         }
 
+        /// <summary>
+        /// Gets the executing workflow definition.
+        /// </summary>
         public WorkflowDefinition WorkflowDefinition { get; }
 
+        /// <summary>
+        /// Gets the executing activity definition.
+        /// </summary>
         public ActivityDefinition ActivityDefinition { get; }
 
+        /// <summary>
+        /// Gets activity executing execution info.
+        /// </summary>
         public ActivityExecutionInfo ActivityExecutionInfo { get; }
 
+        /// <summary>
+        /// Gets the payload of the event.
+        /// </summary>
+        /// <typeparam name="T">Type of the payload.</typeparam>
+        /// <param name="eventName">The event name.</param>
+        /// <returns>The payload.</returns>
         public T GetInputEventPayload<T>(string eventName)
         {
             if (string.IsNullOrEmpty(eventName))
@@ -64,6 +93,13 @@ namespace Microsoft.EventDrivenWorkflow.Core
             return (T)eventData.Payload;
         }
 
+        /// <summary>
+        /// Publish output event.
+        /// </summary>
+        /// <param name="events">The outupt events.</param>
+        /// <remarks>
+        /// This method can only be called from a synchronized activity.
+        /// </remarks>
         public void PublishEvent(params Event[] events)
         {
             if (this.ActivityDefinition.IsAsync)
@@ -74,6 +110,12 @@ namespace Microsoft.EventDrivenWorkflow.Core
             this.PublishEventInternal(events);
         }
 
+        /// <summary>
+        /// Publish events.
+        /// </summary>
+        /// <param name="events">The outupt events.</param>
+        /// <exception cref="ArgumentException">thrown if output events are not valid.</exception>
+        /// <exception cref="InvalidOperationException">thrown if the one of output events is already published.</exception>
         internal void PublishEventInternal(params Event[] events)
         {
             // Do not add to output events directly so in case there is any invalid event
@@ -123,16 +165,26 @@ namespace Microsoft.EventDrivenWorkflow.Core
             }
         }
 
+        /// <summary>
+        /// Gets output events.
+        /// </summary>
+        /// <returns>A list of output events.</returns>
         internal IEnumerable<EventData> GetOutputEvents() => this.outputEvents.Values;
 
+        /// <summary>
+        /// Validate input events.
+        /// </summary>
         internal void ValidateInputEvents()
         {
-            // TODO (ymliu): Check if input events matches activity definition.
+            // TODO: Check if input events matches activity definition.
         }
 
+        /// <summary>
+        /// Validate output events.
+        /// </summary>
         internal void ValidateOutputEvents()
         {
-            // TODO (ymliu): Check if the output events matches activity definition.
+            // TODO: Check if the output events matches activity definition.
         }
     }
 }
