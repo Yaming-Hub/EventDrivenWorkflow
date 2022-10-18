@@ -1,10 +1,19 @@
-﻿using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.Messaging;
-using Microsoft.EventDrivenWorkflow.Persistence;
-using Microsoft.EventDrivenWorkflow.Runtime.Model;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="EventMessageHandler.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 {
+    using Microsoft.EventDrivenWorkflow.Definitions;
+    using Microsoft.EventDrivenWorkflow.Messaging;
+    using Microsoft.EventDrivenWorkflow.Persistence;
+    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+
+    /// <summary>
+    /// This class defines a message handler which handles event messages.
+    /// </summary>
     internal sealed class EventMessageHandler : IMessageHandler<EventMessage>
     {
         /// <summary>
@@ -74,8 +83,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            var eventData = MapToEventData(message, eventDefinition.PayloadType);
-            var inputEvents = new Dictionary<string, EventData>(capacity: activityDefinition.InputEventDefinitions.Count)
+            var eventData = MapToEvent(message, eventDefinition.PayloadType);
+            var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count)
             {
                 [message.EventName] = eventData
             };
@@ -113,11 +122,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             ActivityDefinition activityDefinition,
             WorkflowExecutionContext wec,
             EventMessage message,
-            EventData eventData,
-            Dictionary<string, EventData> inputEvents)
+            Event @event,
+            Dictionary<string, Event> inputEvents)
         {
             var activityKey = GetActivityKey(wec.WorkflowName, wec.WorkflowId, activityDefinition.Name, wec.PartitionKey);
-            var eventKey = GetEventKey(wec.WorkflowName, wec.WorkflowId, eventData.Name, wec.PartitionKey);
+            var eventKey = GetEventKey(wec.WorkflowName, wec.WorkflowId, @event.Name, wec.PartitionKey);
 
             var activity = await orchestrator.Engine.ActivityStateStore.GetOrAdd(
                 wec.PartitionKey,
@@ -128,27 +137,28 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                     WorkflowVersion = wec.WorkflowVersion,
                     WorkflowId = wec.WorkflowId,
                     Name = activityDefinition.Name,
-                    AvailableInputEvents = new List<string> { eventData.Name }
+                    AvailableInputEvents = new List<string> { @event.Name }
                 });
 
             // Persist event to store. The event may have already been persisted in case of recurrent activity, here always
             // override existing event.
             var eventEntity = new EventEntity
             {
-                Id = eventData.Id,
-                Name = eventData.Name,
-                DelayDuration = eventData.DelayDuration,
+                Id = @event.Id,
+                Name = @event.Name,
+                SourceEngineId = @event.SourceEngineId,
+                DelayDuration = @event.DelayDuration,
                 PayloadType = message.PayloadType,
                 Payload = message.Payload,
             };
 
             await orchestrator.Engine.EventStore.Upsert(wec.PartitionKey, eventKey, eventEntity);
 
-            if (!activity.AvailableInputEvents.Contains(eventData.Name))
+            if (!activity.AvailableInputEvents.Contains(@event.Name))
             {
                 // The event is not in the list, that means the activity is fetched from store. Add the event to
                 // activity and try to persist it.
-                activity.AvailableInputEvents.Add(eventData.Name);
+                activity.AvailableInputEvents.Add(@event.Name);
 
                 try
                 {
@@ -160,9 +170,9 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                     // Please note, the code will only try one more time here, if the update operation continue to 
                     // fail, then let the orchestrator to handle it.
                     activity = await orchestrator.Engine.ActivityStateStore.Get(wec.PartitionKey, activityKey);
-                    if (!activity.AvailableInputEvents.Contains(eventData.Name))
+                    if (!activity.AvailableInputEvents.Contains(@event.Name))
                     {
-                        activity.AvailableInputEvents.Add(eventData.Name);
+                        activity.AvailableInputEvents.Add(@event.Name);
                     }
 
                     await orchestrator.Engine.ActivityStateStore.Update(wec.PartitionKey, activityKey, activity);
@@ -172,7 +182,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             if (activity.AvailableInputEvents.Count == activityDefinition.InputEventDefinitions.Count)
             {
                 var otherEventKeys = activity.AvailableInputEvents
-                    .Where(n => n != eventData.Name)
+                    .Where(n => n != @event.Name)
                     .Select(n => GetEventKey(wec.WorkflowName, wec.WorkflowId, n, wec.PartitionKey))
                     .ToList();
 
@@ -182,13 +192,16 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 {
                     // TODO: What happens if the other event is not found or payload type mismatches?
                     var otherEventDefinition = activityDefinition.InputEventDefinitions[otherEventEntity.Name];
-                    inputEvents[otherEventEntity.Name] = new EventData
+                    var otherEvent = new Event
                     {
                         Id = otherEventEntity.Id,
                         Name = otherEventEntity.Name,
                         DelayDuration = otherEventEntity.DelayDuration,
-                        Payload = this.orchestrator.Engine.Serializer.Deserialize(otherEventEntity.Payload, otherEventDefinition.PayloadType),
+                        SourceEngineId = otherEventEntity.SourceEngineId,
                     };
+
+                    object payload = this.orchestrator.Engine.Serializer.Deserialize(otherEventEntity.Payload, otherEventDefinition.PayloadType);
+                    inputEvents[otherEventEntity.Name] = otherEvent.SetPayload(otherEventDefinition.PayloadType, payload);
                 }
 
                 if (inputEvents.Count != activity.AvailableInputEvents.Count)
@@ -213,18 +226,21 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
         /// <param name="eventMessage">The event message.</param>
         /// <param name="payloadType">Type of the event payload.</param>
         /// <returns>The mapped event.</returns>
-        private EventData MapToEventData(EventMessage eventMessage, Type payloadType)
+        private Event MapToEvent(EventMessage eventMessage, Type payloadType)
         {
             object payload = payloadType == null
                 ? null
                 : orchestrator.Engine.Serializer.Deserialize(eventMessage.Payload, payloadType);
 
-            return new EventData
+            var @event = new Event
             {
                 Id = eventMessage.Id,
                 Name = eventMessage.EventName,
-                Payload = payload,
+                DelayDuration = eventMessage.DelayDuration,
+                SourceEngineId = eventMessage.SourceEngineId
             };
+
+            return @event.SetPayload(payloadType, payload);
         }
 
         /// <summary>

@@ -12,11 +12,19 @@ namespace Microsoft.EventDrivenWorkflow
     public interface IEventRetriever
     {
         /// <summary>
-        /// Gets the payload of the event.
+        /// Gets event by name.
         /// </summary>
         /// <typeparam name="T">Type of the payload.</typeparam>
         /// <param name="eventName">The event name.</param>
-        /// <returns>The payload.</returns>
-        T GetInputEventPayload<T>(string eventName);
+        /// <returns>The event.</returns>
+        Event GetEvent(string eventName);
+
+        /// <summary>
+        /// Gets event by name.
+        /// </summary>
+        /// <typeparam name="T">Type of the payload.</typeparam>
+        /// <param name="eventName">The event name.</param>
+        /// <returns>The event.</returns>
+        Event<T> GetEvent<T>(string eventName);
     }
 }

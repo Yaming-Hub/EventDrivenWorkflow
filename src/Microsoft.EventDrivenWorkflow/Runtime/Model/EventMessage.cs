@@ -2,7 +2,11 @@
 {
     public class EventMessage : MessageBase
     {
+        public string SourceEngineId { get; set; }
+
         public string EventName { get; set; }
+
+        public TimeSpan DelayDuration { get; set; }
 
         public string SourceActivityName { get; set; }
 

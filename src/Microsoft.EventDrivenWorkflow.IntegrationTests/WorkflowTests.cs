@@ -70,6 +70,7 @@ namespace Core.IntegrationTests
             var controlMessageProcessor = new MessageProcessor<ControlMessage>(controlQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
 
             var engine = new WorkflowEngine(
+                id: "test",
                 eventMessageProcessor: eventMessageProcessor,
                 controlMessageProcessor: controlMessageProcessor,
                 eventMessageSender: eventQueue,

@@ -40,7 +40,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         public async Task Execute(
             WorkflowExecutionContext workflowExecutionContext,
             ActivityDefinition activityDefinition,
-            IReadOnlyDictionary<string, EventData> inputEvents)
+            IReadOnlyDictionary<string, Event> inputEvents)
         {
             // Construct activity execution id and context.
             var activityExecutionId = CaculateActivityExecutionId(activityDefinition.Name, inputEvents);
@@ -59,6 +59,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             // Now we got all incoming events for the activity, let's run it.
             var eventOperator = new EventOperator(
+                this.orchestrator,
                 activityDefinition: activityDefinition,
                 activityExecutionContext: activityExecutionContext,
                 inputEvents: inputEvents);
@@ -67,41 +68,44 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             if (activityDefinition.IsAsync)
             {
-                await this.ExecuteAsync(activityExecutionContext, eventOperator);
+                await this.ExecuteAsync(activityExecutionContext, activityDefinition, eventOperator);
             }
             else
             {
-                await this.ExecuteSync(activityExecutionContext, eventOperator);
+                await this.ExecuteSync(activityExecutionContext, activityDefinition, eventOperator);
             }
         }
 
         /// <summary>
         /// Publish output events.
         /// </summary>
-        /// <param name="context">The activity execution context.</param>
+        /// <param name="activityExecutionContext">The activity execution context.</param>
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
-        public async Task PublishOutputEvents(ActivityExecutionContext context, EventOperator eventOperator)
+        public async Task PublishOutputEvents(
+            ActivityExecutionContext activityExecutionContext,
+            ActivityDefinition activityDefinition,
+            EventOperator eventOperator)
         {
             eventOperator.ValidateOutputEvents();
 
             // Queue the output events.
             foreach (var outputEvent in eventOperator.GetOutputEvents())
             {
-                string payloadType = outputEvent.Payload?.GetType()?.FullName;
-                byte[] payload = outputEvent.Payload == null
-                    ? null
-                    : this.orchestrator.Engine.Serializer.Serialize(outputEvent.Payload);
+                var eventDefinition = activityDefinition.OutputEventDefinitions[outputEvent.Name];
+                var payloadType = eventDefinition.PayloadType;
+                object payload = outputEvent.GetPayload(payloadType);
 
                 var message = new EventMessage
                 {
                     Id = outputEvent.Id,
-                    WorkflowExecutionContext = CopyWorkflowExecutionInfo(context), // Trim the activity part from context
+                    SourceEngineId = outputEvent.SourceEngineId,
+                    WorkflowExecutionContext = CopyWorkflowExecutionInfo(activityExecutionContext), // Trim the activity part from context
                     EventName = outputEvent.Name,
-                    SourceActivityName = context.ActivityName,
-                    SourceActivityExecutionId = context.ActivityExecutionId,
-                    PayloadType = payloadType,
-                    Payload = payload,
+                    SourceActivityName = activityExecutionContext.ActivityName,
+                    SourceActivityExecutionId = activityExecutionContext.ActivityExecutionId,
+                    PayloadType = payloadType?.FullName,
+                    Payload = payload == null ? null : this.orchestrator.Engine.Serializer.Serialize(payload),
                 };
 
                 await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.DelayDuration);
@@ -120,7 +124,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="context">The activity execution context.</param>
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
-        private async Task ExecuteSync(ActivityExecutionContext context, EventOperator eventOperator)
+        private async Task ExecuteSync(ActivityExecutionContext context, ActivityDefinition activityDefinition, EventOperator eventOperator)
         {
             var activity = this.orchestrator.ActivityFactory.CreateActivity(context.ActivityName);
 
@@ -162,7 +166,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 }
             }
 
-            await this.PublishOutputEvents(context, eventOperator);
+            await this.PublishOutputEvents(context, activityDefinition, eventOperator);
         }
 
         /// <summary>
@@ -171,7 +175,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="context">The activity execution context.</param>
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
-        private async Task ExecuteAsync(ActivityExecutionContext context, EventOperator eventOperator)
+        private async Task ExecuteAsync(ActivityExecutionContext context, ActivityDefinition activityDefinition, EventOperator eventOperator)
         {
             var activity = this.orchestrator.ActivityFactory.CreateAsyncActivity(context.ActivityName);
 
@@ -235,7 +239,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// </summary>
         /// <param name="inputEvents">The input events.</param>
         /// <returns>The calculated activity execution id.</returns>
-        private static Guid CaculateActivityExecutionId(string activityName, IReadOnlyDictionary<string, EventData> inputEvents)
+        private static Guid CaculateActivityExecutionId(string activityName, IReadOnlyDictionary<string, Event> inputEvents)
         {
             var sb = new StringBuilder(capacity: activityName.Length + 1 + 37 * inputEvents.Count);
             sb.Append(activityName).Append(":");

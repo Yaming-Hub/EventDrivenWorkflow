@@ -8,6 +8,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     using System.Collections.Concurrent;
     using System.Linq.Expressions;
+    using System.Reflection;
 
     /// <summary>
     /// This class defines extension methods of the <see cref="Event"/> class.
@@ -21,6 +22,12 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             new ConcurrentDictionary<Type, Func<Event, object>>();
 
         /// <summary>
+        /// A dictionary contains payload getter functions.
+        /// </summary>
+        private static readonly ConcurrentDictionary<Type, Func<Event, object, Event>> payloadSetters =
+            new ConcurrentDictionary<Type, Func<Event, object, Event>>();
+
+        /// <summary>
         /// Get payload of the event.
         /// </summary>
         /// <param name="event">The event object.</param>
@@ -28,6 +35,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <returns>The payload object.</returns>
         public static object GetPayload(this Event @event, Type payloadType)
         {
+            if (payloadType == null)
+            {
+                return null;
+            }
+
             Func<Event, object> getter;
             if (!payloadGetters.TryGetValue(payloadType, out getter))
             {
@@ -47,6 +59,84 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             }
 
             return getter.Invoke(@event);
+        }
+
+        /// <summary>
+        /// Create a copy of event with payload set.
+        /// </summary>
+        /// <param name="event">The source event.</param>
+        /// <param name="payloadType">The payload type.</param>
+        /// <param name="payload">The payload.</param>
+        /// <returns>The copy event with payload.</returns>
+        public static Event SetPayload(this Event @event, Type payloadType, object payload)
+        {
+            if (payloadType == null)
+            {
+                return @event;
+            }
+
+            Func<Event, object, Event> setter;
+            if (!payloadSetters.TryGetValue(payloadType, out setter))
+            {
+                // Compile function: (e, p) =>
+                // {
+                //   var x = new Event<T>();
+                //   x.Id = e.Id;
+                //   x.Name = e.Name;
+                //   ...
+                //   x.Payload = (T)p;
+                //   return (Event)x;
+                // }
+                var eventOfPayloadType = typeof(Event<>).MakeGenericType(payloadType);
+
+                var eParameter = Expression.Parameter(typeof(Event), "e");
+                var pParameter = Expression.Parameter(payloadType, "p");
+
+                var xVariable = Expression.Variable(eventOfPayloadType, "x");
+                var eventConstructor = Expression.New(eventOfPayloadType.GetConstructor(Array.Empty<Type>()));
+
+                List<Expression> expressions = new List<Expression>();
+
+                // x = new Event<T>();
+                expressions.Add(Expression.Assign(xVariable, eventConstructor));
+
+                foreach (var property in typeof(Event).GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                {
+                    if (!property.CanRead || !property.CanWrite)
+                    {
+                        continue;
+                    }
+
+                    // x.Property = e.Property
+                    var xProperty = Expression.Property(xVariable, property);
+                    var eProperty = Expression.Property(eParameter, property);
+                    expressions.Add(Expression.Assign(xProperty, eProperty));
+                }
+
+                // x.Payload = (T)p;
+                var convertPayload = Expression.Convert(pParameter, payloadType);
+                var payloadProperty = Expression.Property(xVariable, nameof(Event<object>.Payload));
+                expressions.Add(Expression.Assign(payloadProperty, convertPayload));
+
+                var convertX = Expression.Convert(xVariable, typeof(Event));
+
+                LabelTarget returnTarget = Expression.Label(eventOfPayloadType);
+                GotoExpression returnExpression = Expression.Return(returnTarget, convertX, typeof(Event));
+                LabelExpression returnLabel = Expression.Label(returnTarget);
+
+
+                expressions.Add(returnExpression);
+                expressions.Add(returnLabel);
+
+                var block = Expression.Block(expressions);
+                var lamda = Expression.Lambda<Func<Event, object, Event>>(block);
+
+                setter = lamda.Compile();
+
+                payloadSetters.TryAdd(payloadType, setter);
+            }
+
+            return setter.Invoke(@event, payload);
         }
     }
 }

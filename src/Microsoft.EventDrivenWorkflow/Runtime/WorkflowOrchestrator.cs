@@ -134,7 +134,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="context">The activity execution context.</param>
         /// <param name="outputEvents">An array contains output events.</param>
         /// <returns>A task represents the async operation.</returns>
-        public async Task EndExecute(ActivityExecutionContext context, params Event[] outputEvents)
+        public async Task EndExecute(ActivityExecutionContext context, Action<IEventPublisher> publishOutputEvent)
         {
             var workflowDefinition = this.WorkflowDefinition;
             if (workflowDefinition.Name != context.WorkflowName)
@@ -154,13 +154,17 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             }
 
             EventOperator eventOperator = new EventOperator(
+                this,
                 activityDefinition,
                 context,
-                inputEvents: new Dictionary<string, EventData>());
+                inputEvents: new Dictionary<string, Event>());
 
-            eventOperator.PublishEventInternal(outputEvents);
+            if (publishOutputEvent != null)
+            {
+                publishOutputEvent(eventOperator);
+            }
 
-            await this.ActivityExecutor.PublishOutputEvents(context, eventOperator);
+            await this.ActivityExecutor.PublishOutputEvents(context, activityDefinition, eventOperator);
         }
     }
 }

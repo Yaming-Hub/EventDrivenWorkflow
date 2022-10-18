@@ -18,6 +18,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <summary>
         /// Initializes a new instance of the <see cref="WorkflowEngine"/> class.
         /// </summary>
+        /// <param name="id">The engine id.</param>
         /// <param name="eventMessageProcessor">The event message processor.</param>
         /// <param name="controlMessageProcessor">The control message processor.</param>
         /// <param name="eventMessageSender">The event message sender.</param>
@@ -27,6 +28,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="serializer">The serializer.</param>
         /// <param name="timeProvider">The time provider.</param>
         public WorkflowEngine(
+            string id,
             IMessageProcessor<EventMessage> eventMessageProcessor,
             IMessageProcessor<ControlMessage> controlMessageProcessor,
             IMessageSender<EventMessage> eventMessageSender,
@@ -36,6 +38,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             IEntityStore<ActivityStateEntity> activityStateStore,
             ITimeProvider timeProvider = null)
         {
+            this.Id = id;
             this.EventMessageProcessor = eventMessageProcessor;
             this.ControlMessageProcessor = controlMessageProcessor;
             this.EventMessageSender = eventMessageSender;
@@ -45,6 +48,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             this.Serializer = serializer;
             this.TimeProvider = timeProvider ?? new DefaultTimeProvider();
         }
+
+        /// <summary>
+        /// Gets engine id.
+        /// </summary>
+        internal string Id { get; }
 
         /// <summary>
         /// Gets the event message processor.

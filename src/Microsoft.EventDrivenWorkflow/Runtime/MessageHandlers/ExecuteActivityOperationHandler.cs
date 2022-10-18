@@ -1,14 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Messaging;
-using Microsoft.EventDrivenWorkflow.Runtime.Model;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ExecuteActivityOperationHandler.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 {
-    internal class ExecuteActivityOperationHandler : IControlOperationHandler
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.EventDrivenWorkflow.Messaging;
+    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+
+    internal sealed class ExecuteActivityOperationHandler : IControlOperationHandler
     {
         public async Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, ControlMessage message)
         {
@@ -38,7 +41,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             await orchestrator.ActivityExecutor.Execute(
                 message.WorkflowExecutionContext,
                 activityDefinition,
-                inputEvents: new Dictionary<string, EventData>());
+                inputEvents: new Dictionary<string, Event>());
 
             return MessageHandleResult.Complete;
         }

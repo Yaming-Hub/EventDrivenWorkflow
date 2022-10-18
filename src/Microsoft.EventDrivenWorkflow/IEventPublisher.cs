@@ -12,12 +12,33 @@ namespace Microsoft.EventDrivenWorkflow
     public interface IEventPublisher
     {
         /// <summary>
-        /// Publish output event.
+        /// Publish output event with payload.
         /// </summary>
-        /// <param name="events">The outupt events.</param>
-        /// <remarks>
-        /// This method can only be called from a synchronized activity.
-        /// </remarks>
-        void PublishEvents(params Event[] events);
+        /// <param name="eventName">The event name.</param>
+        void PublishEvent(string eventName);
+
+        /// <summary>
+        /// Publish output event with payload.
+        /// </summary>
+        /// <param name="eventName">The event name.</param>
+        /// <param name="delayDuration">After how long the event will be published.</param>
+        void PublishEvent(string eventName, TimeSpan delayDuration);
+
+        /// <summary>
+        /// Publish output event with payload.
+        /// </summary>
+        /// <typeparam name="T">Type of the payload.</typeparam>
+        /// <param name="eventName">The event name.</param>
+        /// <param name="payload">The event payload.</param>
+        void PublishEvent<T>(string eventName, T payload);
+
+        /// <summary>
+        /// Publish output event with payload.
+        /// </summary>
+        /// <typeparam name="T">Type of the payload.</typeparam>
+        /// <param name="eventName">The event name.</param>
+        /// <param name="payload">The event payload.</param>
+        /// <param name="delayDuration">After how long the event will be published.</param>
+        void PublishEvent<T>(string eventName, T payload, TimeSpan delayDuration);
     }
 }

@@ -11,6 +11,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Model
     {
         public Guid Id { get; set; }
 
+        public string SourceEngineId { get; set; }
+
         public string Name { get; init; }
 
         public string PayloadType { get; init; }

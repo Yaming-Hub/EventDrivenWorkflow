@@ -8,21 +8,26 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     using Microsoft.EventDrivenWorkflow.Definitions;
     using Microsoft.EventDrivenWorkflow.Runtime.Model;
-
+ 
     /// <summary>
     /// This class defines the event operator of an activity.
     /// </summary>
     public sealed class EventOperator : IEventPublisher, IEventRetriever
     {
         /// <summary>
+        /// Gets workflow orchestrator.
+        /// </summary>
+        private readonly WorkflowOrchestrator orchestrator;
+
+        /// <summary>
         /// A dictionary contains input events.
         /// </summary>
-        private readonly IReadOnlyDictionary<string, EventData> inputEvents;
+        private readonly IReadOnlyDictionary<string, Event> inputEvents;
 
         /// <summary>
         /// A dictionary contains output events.
         /// </summary>
-        private readonly Dictionary<string, EventData> outputEvents;
+        private readonly Dictionary<string, Event> outputEvents;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventOperator"/> class.
@@ -31,15 +36,17 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="activityExecutionContext">The activity execution information.</param>
         /// <param name="inputEvents">A dictionary contains input events of the execiting activity.</param>
         internal EventOperator(
+            WorkflowOrchestrator orchestrator,
             ActivityDefinition activityDefinition,
             ActivityExecutionContext activityExecutionContext,
-            IReadOnlyDictionary<string, EventData> inputEvents)
+            IReadOnlyDictionary<string, Event> inputEvents)
         {
+            this.orchestrator = orchestrator;
             this.ActivityDefinition = activityDefinition;
             this.ActivityExecutionInfo = activityExecutionContext;
 
             this.inputEvents = inputEvents;
-            this.outputEvents = new Dictionary<string, EventData>();
+            this.outputEvents = new Dictionary<string, Event>();
         }
 
         /// <summary>
@@ -52,8 +59,71 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// </summary>
         public ActivityExecutionContext ActivityExecutionInfo { get; }
 
+        public Event GetEvent(string eventName)
+        {
+            return this.GetEvent(eventName, payloadType: null);
+        }
+
         /// <inheritdoc/>
-        public T GetInputEventPayload<T>(string eventName)
+        public Event<T> GetEvent<T>(string eventName)
+        {
+            return (Event<T>)this.GetEvent(eventName, typeof(T));
+        }
+
+        /// <inheritdoc/>
+        public void PublishEvent(string eventName)
+        {
+            this.PublishEvent(eventName, delayDuration: TimeSpan.Zero);
+        }
+
+        /// <inheritdoc/>
+        public void PublishEvent(string eventName, TimeSpan delayDuration)
+        {
+            this.ValidateOutputEvent(eventName, payloadType: null);
+
+            var @event = new Event
+            {
+                Id = Guid.NewGuid(),
+                Name = eventName,
+                DelayDuration = delayDuration,
+                SourceEngineId = this.orchestrator.Engine.Id
+            };
+
+            this.outputEvents.Add(eventName, @event);
+        }
+
+        /// <inheritdoc/>
+        public void PublishEvent<T>(string eventName, T payload)
+        {
+
+            this.PublishEvent<T>(eventName, payload, delayDuration: TimeSpan.Zero);
+        }
+
+
+        /// <inheritdoc/>
+        public void PublishEvent<T>(string eventName, T payload, TimeSpan delayDuration)
+        {
+            this.ValidateOutputEvent(eventName, payloadType: typeof(T));
+
+            var @event = new Event<T>
+            {
+                Id = Guid.NewGuid(),
+                Name = eventName,
+                DelayDuration = delayDuration,
+                Payload = payload,
+                SourceEngineId = this.orchestrator.Engine.Id
+            };
+
+            this.outputEvents.Add(eventName, @event);
+        }
+
+        /// <summary>
+        /// Gets event by name.
+        /// </summary>
+        /// <param name="eventName">The event name.</param>
+        /// <param name="payloadType">The payload type.</param>
+        /// <returns>The event object.</returns>
+        private Event GetEvent(string eventName, Type payloadType)
         {
             if (string.IsNullOrEmpty(eventName))
             {
@@ -65,84 +135,49 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 throw new ArgumentException($"The input event {eventName} is not defined.");
             }
 
-            if (eventDefinition.PayloadType != typeof(T))
+            if (eventDefinition.PayloadType != payloadType)
             {
                 throw new ArgumentException(
-                    $"The input event {eventName} payload type {eventDefinition.PayloadType.FullName} " +
-                    $"is different from the requesting payload type {typeof(T).FullName}.");
+                    $"The input event {eventName} payload type {eventDefinition.PayloadType?.FullName ?? "<null>"} " +
+                    $"is different from the requesting payload type {payloadType?.FullName ?? "<null>"}.");
             }
 
-            if (!this.inputEvents.TryGetValue(eventName, out var eventData))
+            if (!this.inputEvents.TryGetValue(eventName, out Event @event))
             {
                 throw new InvalidOperationException($"The input event {eventName} is not found.");
             }
 
-            return (T)eventData.Payload;
+            return @event;
         }
 
-        /// <inheritdoc/>
-        public void PublishEvents(params Event[] events)
+
+        private void ValidateOutputEvent(string eventName, Type payloadType)
         {
             if (this.ActivityDefinition.IsAsync)
             {
                 throw new InvalidOperationException("Events can only published for synchronized activity.");
             }
 
-            this.PublishEventInternal(events);
-        }
-
-        /// <summary>
-        /// Publish events.
-        /// </summary>
-        /// <param name="events">The outupt events.</param>
-        /// <exception cref="ArgumentException">thrown if output events are not valid.</exception>
-        /// <exception cref="InvalidOperationException">thrown if the one of output events is already published.</exception>
-        internal void PublishEventInternal(params Event[] events)
-        {
-            // Do not add to output events directly so in case there is any invalid event
-            // the output events will remain unchanged.
-            var eventDataList = new List<EventData>(events.Length);
-            foreach (var @event in events)
+            if (string.IsNullOrEmpty(eventName))
             {
-                if (string.IsNullOrEmpty(@event.Name))
-                {
-                    throw new ArgumentException("Event must have name");
-                }
-
-                if (!this.ActivityDefinition.OutputEventDefinitions.TryGetValue(@event.Name, out var eventDefinition))
-                {
-                    throw new ArgumentException($"The output event name {@event.Name} is not defined.");
-                }
-
-                if (this.outputEvents.ContainsKey(@event.Name))
-                {
-                    throw new InvalidOperationException($"The output event {@event.Name} is already published.");
-                }
-
-                object payload = null;
-                if (eventDefinition.PayloadType != null)
-                {
-                    try
-                    {
-                        payload = @event.GetPayload(eventDefinition.PayloadType);
-                    }
-                    catch (InvalidCastException ice)
-                    {
-                        throw new ArgumentException($"The event {@event.Name} must have payload with type {eventDefinition.PayloadType.FullName}.", ice);
-                    }
-                }
-
-                eventDataList.Add(new EventData
-                {
-                    Name = @event.Name,
-                    Payload = payload,
-                    DelayDuration = @event.DelayDuration,
-                });
+                throw new ArgumentException("Event must have name");
             }
 
-            foreach (var coreEvent in eventDataList)
+            if (!this.ActivityDefinition.OutputEventDefinitions.TryGetValue(eventName, out var eventDefinition))
             {
-                this.outputEvents.Add(coreEvent.Name, coreEvent);
+                throw new ArgumentException($"The output event name {eventName} is not defined.");
+            }
+
+            if (eventDefinition.PayloadType != payloadType)
+            {
+                throw new ArgumentException(
+                    $"The output event {eventName} payload type {eventDefinition.PayloadType?.FullName ?? "<null>"} " +
+                    $"is different from the parameter payload type {payloadType?.FullName ?? "<null>"}.");
+            }
+
+            if (this.outputEvents.ContainsKey(eventName))
+            {
+                throw new InvalidOperationException($"The output event {eventName} is already published.");
             }
         }
 
@@ -150,7 +185,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Gets output events.
         /// </summary>
         /// <returns>A list of output events.</returns>
-        internal IEnumerable<EventData> GetOutputEvents() => this.outputEvents.Values;
+        internal IEnumerable<Event> GetOutputEvents() => this.outputEvents.Values;
 
         /// <summary>
         /// Validate input events.

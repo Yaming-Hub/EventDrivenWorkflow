@@ -12,6 +12,11 @@ namespace Microsoft.EventDrivenWorkflow
     public class Event
     {
         /// <summary>
+        /// Gets event id.
+        /// </summary>
+        public Guid Id { get; init; }
+
+        /// <summary>
         /// Gets name of the event.
         /// </summary>
         public string Name { get; init; }
@@ -20,5 +25,10 @@ namespace Microsoft.EventDrivenWorkflow
         /// Gets after how long the event should be published.
         /// </summary>
         public TimeSpan DelayDuration { get; init; }
+
+        /// <summary>
+        /// Gets the source engine id.
+        /// </summary>
+        public string SourceEngineId { get; init; }
     }
 }
