@@ -41,7 +41,7 @@ namespace Core.IntegrationTests
         }
 
         [TestMethod]
-        public Task TestSimpleWorkflow()
+        public async Task TestSimpleWorkflow()
         {
             var engine = CreateMemoryEngine();
 
@@ -57,7 +57,7 @@ namespace Core.IntegrationTests
             var activityFactory = new LogActivityFactory();
             var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowOrchestrationOptions());
 
-            return Task.CompletedTask;
+            await orchestrator.StartNew();
         }
 
         public static WorkflowEngine CreateMemoryEngine()
