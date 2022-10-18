@@ -1,18 +1,31 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="EventExtensions.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Runtime
 {
+    using System.Collections.Concurrent;
+    using System.Linq.Expressions;
+
+    /// <summary>
+    /// This class defines extension methods of the <see cref="Event"/> class.
+    /// </summary>
     internal static class EventExtensions
     {
-        private static readonly ConcurrentDictionary<Type, Func<Event, object>> payloadGetters = new ConcurrentDictionary<Type, Func<Event, object>>();
+        /// <summary>
+        /// A dictionary contains payload getter functions.
+        /// </summary>
+        private static readonly ConcurrentDictionary<Type, Func<Event, object>> payloadGetters =
+            new ConcurrentDictionary<Type, Func<Event, object>>();
 
+        /// <summary>
+        /// Get payload of the event.
+        /// </summary>
+        /// <param name="event">The event object.</param>
+        /// <param name="payloadType">The payload type.</param>
+        /// <returns>The payload object.</returns>
         public static object GetPayload(this Event @event, Type payloadType)
         {
             Func<Event, object> getter;

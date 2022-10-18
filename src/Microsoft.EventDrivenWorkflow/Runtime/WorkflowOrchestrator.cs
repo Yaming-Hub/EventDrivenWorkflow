@@ -93,7 +93,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         {
             Guid workflowId = Guid.NewGuid();
 
-            var workflowExecutionInfo = new WorkflowExecutionInfo
+            var workflowExecutionInfo = new WorkflowExecutionContext
             {
                 WorkflowName = this.WorkflowDefinition.Name,
                 WorkflowVersion = this.WorkflowDefinition.Version,
@@ -105,7 +105,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             var executeInitializingActivityMessage = new ControlMessage
             {
                 Id = Guid.NewGuid(),
-                WorkflowExecutionInfo = workflowExecutionInfo,
+                WorkflowExecutionContext = workflowExecutionInfo,
                 Operation = ControlOperation.ExecuteActivity,
                 TargetActivityName = this.WorkflowDefinition.InitializingActivityDefinition.Name,
             };
@@ -118,7 +118,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 var trackWorkflowTimeoutMessage = new ControlMessage
                 {
                     Id = Guid.NewGuid(),
-                    WorkflowExecutionInfo = workflowExecutionInfo,
+                    WorkflowExecutionContext = workflowExecutionInfo,
                     Operation = ControlOperation.WorkflowTimeout,
                 };
 
@@ -131,38 +131,36 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <summary>
         /// Finish executing the asynchronous activity.
         /// </summary>
-        /// <param name="activityExecutionInfo"></param>
-        /// <param name="outputEvents"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public async Task EndExecute(ActivityExecutionInfo activityExecutionInfo, params Event[] outputEvents)
+        /// <param name="context">The activity execution context.</param>
+        /// <param name="outputEvents">An array contains output events.</param>
+        /// <returns>A task represents the async operation.</returns>
+        public async Task EndExecute(ActivityExecutionContext context, params Event[] outputEvents)
         {
             var workflowDefinition = this.WorkflowDefinition;
-            if (workflowDefinition.Name != activityExecutionInfo.WorkflowName)
+            if (workflowDefinition.Name != context.WorkflowName)
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity in workflow {activityExecutionInfo.WorkflowName} " +
+                    $"Cannot complete activity in workflow {context.WorkflowName} " +
                     $"using completer of workflow {workflowDefinition.Name}.");
             }
 
             // TODO: Compare workflow version.
 
-            if (!workflowDefinition.ActivityDefinitions.TryGetValue(activityExecutionInfo.ActivityName, out var activityDefinition))
+            if (!workflowDefinition.ActivityDefinitions.TryGetValue(context.ActivityName, out var activityDefinition))
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity {activityExecutionInfo.ActivityName} because it is not " +
+                    $"Cannot complete activity {context.ActivityName} because it is not " +
                     $"defined in workflow {workflowDefinition.Name}.");
             }
 
-            ActivityExecutionContext activityExecutionContext = new ActivityExecutionContext(
-                workflowDefinition,
+            EventOperator eventOperator = new EventOperator(
                 activityDefinition,
-                activityExecutionInfo,
+                context,
                 inputEvents: new Dictionary<string, EventData>());
 
-            activityExecutionContext.PublishEventInternal(outputEvents);
+            eventOperator.PublishEventInternal(outputEvents);
 
-            await this.ActivityExecutor.PublishOutputEvents(activityExecutionContext);
+            await this.ActivityExecutor.PublishOutputEvents(context, eventOperator);
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 
         public async Task<MessageHandleResult> Handle(ControlMessage message)
         {
-            if (message.WorkflowExecutionInfo.WorkflowName != this.orchestrator.WorkflowDefinition.Name)
+            if (message.WorkflowExecutionContext.WorkflowName != this.orchestrator.WorkflowDefinition.Name)
             {
                 return MessageHandleResult.Continue;
             }

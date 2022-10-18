@@ -1,25 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="WorkflowException.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Runtime
 {
+    /// <summary>
+    /// This class defines a workflow exception.
+    /// </summary>
     internal sealed class WorkflowException : Exception
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorkflowException"/> instance.
+        /// </summary>
+        /// <param name="isTransient">Whether the failure is transient or not.</param>
+        /// <param name="message">The error message.</param>
         public WorkflowException(bool isTransient, string message)
-            : base(message)
+            : this(isTransient, message, innerException: null)
         {
-            IsTransient = isTransient;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorkflowException"/> instance.
+        /// </summary>
+        /// <param name="isTransient">Whether the failure is transient or not.</param>
+        /// <param name="message">The error message.</param>
+        /// <param name="innerException">The inner exception.</param>
         public WorkflowException(bool isTransient, string message, Exception innerException)
             : base(message, innerException)
         {
-            IsTransient = isTransient;
+            this.IsTransient = isTransient;
         }
 
+        /// <summary>
+        /// Gets a value indicates whether the failure is transient or not.
+        /// </summary>
         public bool IsTransient { get; }
     }
 }

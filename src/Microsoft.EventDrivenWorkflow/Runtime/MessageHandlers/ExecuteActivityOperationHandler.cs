@@ -19,8 +19,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            var workflowDefinition = orchestrator.WorkflowDefinition;
-            if (!workflowDefinition.ActivityDefinitions.TryGetValue(message.TargetActivityName, out var activityDefinition))
+            if (!orchestrator.WorkflowDefinition.ActivityDefinitions.TryGetValue(
+                message.TargetActivityName, out var activityDefinition))
             {
                 // The target activity is not defined. This may happen if the workflow is changed.
                 // TODO: Report unknown event error.
@@ -35,11 +35,9 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            var wei = message.WorkflowExecutionInfo;
             await orchestrator.ActivityExecutor.Execute(
-                workflowDefinition,
+                message.WorkflowExecutionContext,
                 activityDefinition,
-                wei,
                 inputEvents: new Dictionary<string, EventData>());
 
             return MessageHandleResult.Complete;

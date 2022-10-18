@@ -14,10 +14,15 @@ namespace Core.IntegrationTests
     {
         public class LogActivity : IActivity
         {
-            public Task Execute(ActivityExecutionContext context, CancellationToken cancellationToken)
+            public Task Execute(
+                ActivityExecutionContext context,
+                IEventRetriever eventRetriever,
+                IEventPublisher eventPublisher,
+                CancellationToken cancellationToken)
             {
-                var aei = context.ActivityExecutionInfo;
-                Trace.WriteLine($"{aei.WorkflowName}/{aei.WorkflowId}/activities/{aei.ActivityName}/{aei.ActivityExecutionId}[{aei.PartitionKey}]");
+
+                var c = context;
+                Trace.WriteLine($"{c.WorkflowName}/{c.WorkflowId}/activities/{c.ActivityName}/{c.ActivityExecutionId}[{c.PartitionKey}]");
                 return Task.CompletedTask;
             }
         }
@@ -58,7 +63,7 @@ namespace Core.IntegrationTests
         public static WorkflowEngine CreateMemoryEngine()
         {
             var eventStore = new EntityStore<EventEntity>();
-            var activityStore = new EntityStore<ActivityStateEntity>();
+            var activityStateStore = new EntityStore<ActivityStateEntity>();
             var eventQueue = new MessageQueue<EventMessage>();
             var controlQueue = new MessageQueue<ControlMessage>();
             var eventMessageProcessor = new MessageProcessor<EventMessage>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
@@ -69,9 +74,9 @@ namespace Core.IntegrationTests
                 controlMessageProcessor: controlMessageProcessor,
                 eventMessageSender: eventQueue,
                 controlMessageSender: controlQueue,
-                serializer: new TestJsonSerializer(),
                 eventStore: eventStore,
-                activityStore: activityStore);
+                activityStateStore: activityStateStore,
+                serializer: new TestJsonSerializer());
 
             return engine;
         }

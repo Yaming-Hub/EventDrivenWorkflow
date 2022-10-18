@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ITimeProvider.cs" company="Microsoft">
+// <copyright file="DefaultTimeProvider.cs" company="Microsoft">
 //   Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
@@ -7,13 +7,11 @@
 namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     /// <summary>
-    /// This interface defines a time provider.
+    /// This class defines a default time provider.
     /// </summary>
-    public interface ITimeProvider
+    internal sealed class DefaultTimeProvider : ITimeProvider
     {
-        /// <summary>
-        /// Gets current UTC time.
-        /// </summary>
-        DateTime UtcNow { get; }
+        /// <inheritdoc/>
+        public DateTime UtcNow => DateTime.UtcNow;
     }
 }

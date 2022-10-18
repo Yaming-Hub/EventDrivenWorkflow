@@ -45,7 +45,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
         private async Task<MessageHandleResult> HandleInternal(EventMessage message)
         {
             var workflowDefinition = orchestrator.WorkflowDefinition;
-            if (message.WorkflowExecutionInfo.WorkflowName != workflowDefinition.Name)
+            if (message.WorkflowExecutionContext.WorkflowName != workflowDefinition.Name)
             {
                 // The event doesn't belong to this workflow, it should be handled by another handler.
                 return MessageHandleResult.Continue; // Ignore if the event doesn't belong to this workflow.
@@ -75,7 +75,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             }
 
             var eventData = MapToEventData(message, eventDefinition.PayloadType);
-            var wei = message.WorkflowExecutionInfo;
             var inputEvents = new Dictionary<string, EventData>(capacity: activityDefinition.InputEventDefinitions.Count)
             {
                 [message.EventName] = eventData
@@ -89,7 +88,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 // events and update activity states to see if the activity is ready to execute.
                 var allInputEventsAvailable = await TryLoadInputEvents(
                     activityDefinition,
-                    wei,
+                    message.WorkflowExecutionContext,
                     message,
                     eventData,
                     inputEvents);
@@ -103,9 +102,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 
             // Execute the activity when all inputs are ready.
             await this.orchestrator.ActivityExecutor.Execute(
-                workflowDefinition,
+                message.WorkflowExecutionContext,
                 activityDefinition,
-                wei,
                 inputEvents);
 
             return MessageHandleResult.Complete;
@@ -113,22 +111,22 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 
         private async Task<bool> TryLoadInputEvents(
             ActivityDefinition activityDefinition,
-            WorkflowExecutionInfo wei,
+            WorkflowExecutionContext wec,
             EventMessage message,
             EventData eventData,
             Dictionary<string, EventData> inputEvents)
         {
-            var activityKey = GetActivityKey(wei.WorkflowName, wei.WorkflowId, activityDefinition.Name, wei.PartitionKey);
-            var eventKey = GetEventKey(wei.WorkflowName, wei.WorkflowId, eventData.Name, wei.PartitionKey);
+            var activityKey = GetActivityKey(wec.WorkflowName, wec.WorkflowId, activityDefinition.Name, wec.PartitionKey);
+            var eventKey = GetEventKey(wec.WorkflowName, wec.WorkflowId, eventData.Name, wec.PartitionKey);
 
-            var activity = await orchestrator.Engine.ActivityStore.GetOrAdd(
-                wei.PartitionKey,
+            var activity = await orchestrator.Engine.ActivityStateStore.GetOrAdd(
+                wec.PartitionKey,
                 activityKey,
                 () => new ActivityStateEntity
                 {
-                    WorkflowName = wei.WorkflowName,
-                    WorkflowVersion = wei.WorkflowVersion,
-                    WorkflowId = wei.WorkflowId,
+                    WorkflowName = wec.WorkflowName,
+                    WorkflowVersion = wec.WorkflowVersion,
+                    WorkflowId = wec.WorkflowId,
                     Name = activityDefinition.Name,
                     AvailableInputEvents = new List<string> { eventData.Name }
                 });
@@ -144,7 +142,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 Payload = message.Payload,
             };
 
-            await orchestrator.Engine.EventStore.Upsert(wei.PartitionKey, eventKey, eventEntity);
+            await orchestrator.Engine.EventStore.Upsert(wec.PartitionKey, eventKey, eventEntity);
 
             if (!activity.AvailableInputEvents.Contains(eventData.Name))
             {
@@ -154,20 +152,20 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 
                 try
                 {
-                    await orchestrator.Engine.ActivityStore.Update(wei.PartitionKey, activityKey, activity);
+                    await orchestrator.Engine.ActivityStateStore.Update(wec.PartitionKey, activityKey, activity);
                 }
                 catch (StoreException se) when (se.ErrorCode == StoreErrorCode.EtagMismatch)
                 {
                     // The activity has been updated by another orchestrator. Re-load the activity and try again.
                     // Please note, the code will only try one more time here, if the update operation continue to 
                     // fail, then let the orchestrator to handle it.
-                    activity = await orchestrator.Engine.ActivityStore.Get(wei.PartitionKey, activityKey);
+                    activity = await orchestrator.Engine.ActivityStateStore.Get(wec.PartitionKey, activityKey);
                     if (!activity.AvailableInputEvents.Contains(eventData.Name))
                     {
                         activity.AvailableInputEvents.Add(eventData.Name);
                     }
 
-                    await orchestrator.Engine.ActivityStore.Update(wei.PartitionKey, activityKey, activity);
+                    await orchestrator.Engine.ActivityStateStore.Update(wec.PartitionKey, activityKey, activity);
                 }
             }
 
@@ -175,10 +173,10 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             {
                 var otherEventKeys = activity.AvailableInputEvents
                     .Where(n => n != eventData.Name)
-                    .Select(n => GetEventKey(wei.WorkflowName, wei.WorkflowId, n, wei.PartitionKey))
+                    .Select(n => GetEventKey(wec.WorkflowName, wec.WorkflowId, n, wec.PartitionKey))
                     .ToList();
 
-                var otherEventEntities = await orchestrator.Engine.EventStore.GetMany(wei.PartitionKey, otherEventKeys);
+                var otherEventEntities = await orchestrator.Engine.EventStore.GetMany(wec.PartitionKey, otherEventKeys);
 
                 foreach (var otherEventEntity in otherEventEntities)
                 {

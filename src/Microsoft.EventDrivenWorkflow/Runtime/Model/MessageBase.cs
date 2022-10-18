@@ -10,6 +10,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Model
     {
         public Guid Id { get; init; }
 
-        public WorkflowExecutionInfo WorkflowExecutionInfo { get; init; }
+        public WorkflowExecutionContext WorkflowExecutionContext { get; init; }
     }
 }
