@@ -58,9 +58,13 @@ namespace Microsoft.EventDrivenWorkflow.Memory.Messaging
 
             foreach (var processor in copy)
             {
-                if (delayDuration != TimeSpan.Zero)
+                if (delayDuration == TimeSpan.Zero)
                 {
-                    Task.Run(() => processor.Process(attempt));
+                    Task.Run(async () =>
+                    {
+                        await Task.Yield();
+                        await processor.Process(attempt);
+                    });
                 }
                 else
                 {

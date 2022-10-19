@@ -26,14 +26,13 @@ namespace Core.IntegrationTests
             builder.AddActivity("a3").Subscribe("e2");
 
             var workflowDefinition = builder.Build();
-
-            var activityFactory = new LogActivityFactory();
+            var activityFactory = new LogActivityFactory(workflowDefinition);
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowOrchestrationOptions());
 
             await orchestrator.StartNew();
 
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             Trace.WriteLine("Done");
         }

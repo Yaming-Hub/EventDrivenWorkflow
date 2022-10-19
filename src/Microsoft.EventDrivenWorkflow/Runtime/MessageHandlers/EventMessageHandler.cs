@@ -67,7 +67,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            if (eventDefinition.PayloadType.FullName != message.PayloadType)
+            if (eventDefinition.PayloadType?.FullName != message.PayloadType)
             {
                 // The incoming event payload type doesn't match the event definition, the workflow logic may have been changed.
                 // TODO: Report invalid event error.
