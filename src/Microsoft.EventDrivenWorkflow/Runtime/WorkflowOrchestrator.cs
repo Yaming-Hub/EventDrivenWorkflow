@@ -93,7 +93,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         {
             Guid workflowId = Guid.NewGuid();
 
-            var workflowExecutionInfo = new WorkflowExecutionContext
+            var workflowExecutionContext = new WorkflowExecutionContext
             {
                 WorkflowName = this.WorkflowDefinition.Name,
                 WorkflowVersion = this.WorkflowDefinition.Version,
@@ -105,7 +105,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             var executeInitializingActivityMessage = new ControlMessage
             {
                 Id = Guid.NewGuid(),
-                WorkflowExecutionContext = workflowExecutionInfo,
+                WorkflowExecutionContext = workflowExecutionContext,
                 Operation = ControlOperation.ExecuteActivity,
                 TargetActivityName = this.WorkflowDefinition.InitializingActivityDefinition.Name,
             };
@@ -113,12 +113,14 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             // Queue a control message to start the initialing activity.
             await this.Engine.ControlMessageSender.Send(executeInitializingActivityMessage);
 
+            await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
+
             if (this.Options.TrackProgress)
             {
                 var trackWorkflowTimeoutMessage = new ControlMessage
                 {
                     Id = Guid.NewGuid(),
-                    WorkflowExecutionContext = workflowExecutionInfo,
+                    WorkflowExecutionContext = workflowExecutionContext,
                     Operation = ControlOperation.WorkflowTimeout,
                 };
 
@@ -163,6 +165,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             {
                 publishOutputEvent(eventOperator);
             }
+
+            await this.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
 
             await this.ActivityExecutor.PublishOutputEvents(context, activityDefinition, eventOperator);
         }

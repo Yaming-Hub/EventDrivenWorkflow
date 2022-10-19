@@ -17,6 +17,8 @@ namespace Microsoft.EventDrivenWorkflow.Memory.Messaging
 
         public MessageProcessor(MessageQueue<TMessage> queue, int maxAttemptCount, TimeSpan retryInterval)
         {
+            this.lockObject = new object();
+
             this.handlers = new List<IMessageHandler<TMessage>>();
             this.queue = queue;
             this.maxAttemptCount = maxAttemptCount;

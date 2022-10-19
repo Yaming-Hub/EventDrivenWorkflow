@@ -10,14 +10,16 @@ namespace Microsoft.EventDrivenWorkflow.Diagnostics
 {
     public interface IWorkflowObserver
     {
-        void WorkflowStarted(WorkflowExecutionContext context);
+        Task WorkflowStarted(WorkflowExecutionContext context);
 
-        void EventAccepted(WorkflowExecutionContext context, Event @event);
+        Task EventAccepted(WorkflowExecutionContext context, Event @event);
 
-        void ActivityStarted(ActivityExecutionContext context, IEnumerable<Event> inputEvents);
+        Task ActivityStarting(ActivityExecutionContext context, IEnumerable<Event> inputEvents);
 
-        void ActivityCompleted(ActivityExecutionContext context, IEnumerable<Event> outputEvents);
+        Task ActivityCompleted(ActivityExecutionContext context, IEnumerable<Event> outputEvents);
 
-        void WorkflowCompleted(WorkflowExecutionContext context);
+        Task EventPublished(WorkflowExecutionContext context, Event @event);
+
+        Task WorkflowCompleted(WorkflowExecutionContext context);
     }
 }

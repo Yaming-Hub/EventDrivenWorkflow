@@ -14,6 +14,7 @@ namespace Microsoft.EventDrivenWorkflow.Memory.Messaging
 
         public MessageQueue()
         {
+            this.lockObject = new object();
             this.processors = new List<MessageProcessor<TMessage>>();
         }
 

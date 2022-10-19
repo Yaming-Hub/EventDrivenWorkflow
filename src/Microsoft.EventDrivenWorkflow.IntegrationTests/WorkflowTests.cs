@@ -6,6 +6,8 @@ using Microsoft.EventDrivenWorkflow.Runtime.IntegrationTests;
 using Microsoft.EventDrivenWorkflow.Runtime.Model;
 using Microsoft.EventDrivenWorkflow.Memory.Messaging;
 using Microsoft.EventDrivenWorkflow.Memory.Persistence;
+using Microsoft.EventDrivenWorkflow.Diagnostics;
+using Microsoft.EventDrivenWorkflow.IntegrationTests;
 
 namespace Core.IntegrationTests
 {
@@ -20,9 +22,46 @@ namespace Core.IntegrationTests
                 IEventPublisher eventPublisher,
                 CancellationToken cancellationToken)
             {
+                Trace.WriteLine("Execute context.GetExecutionPath()");
+                return Task.CompletedTask;
+            }
+        }
 
-                var c = context;
-                Trace.WriteLine($"{c.WorkflowName}/{c.WorkflowId}/activities/{c.ActivityName}/{c.ActivityExecutionId}[{c.PartitionKey}]");
+        public class TraceWorkflowObserver : IWorkflowObserver
+        {
+            public Task WorkflowStarted(WorkflowExecutionContext context)
+            {
+                return Log($"WorkflowStarted    Workflow={context.GetPath()}");
+            }
+
+            public Task EventAccepted(WorkflowExecutionContext context, Event @event)
+            {
+                return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
+            }
+
+            public Task ActivityStarting(ActivityExecutionContext context, IEnumerable<Event> inputEvents)
+            {
+                return Log($"ActivityStarting   Activity={context.GetPath()} Events={string.Join(",", inputEvents.Select(x => x.Name))}");
+            }
+
+            public Task ActivityCompleted(ActivityExecutionContext context, IEnumerable<Event> outputEvents)
+            {
+                return Log($"ActivityCompleted  Activity={context.GetPath()} Events={string.Join(",", outputEvents.Select(x => x.Name))}");
+            }
+
+            public Task EventPublished(WorkflowExecutionContext context, Event @event)
+            {
+                return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
+            }
+
+            public Task WorkflowCompleted(WorkflowExecutionContext context)
+            {
+                return Log($"WorkflowCompleted  Workflow={context.GetPath()}");
+            }
+
+            private static Task Log(string text)
+            {
+                Trace.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss")} {text}");
                 return Task.CompletedTask;
             }
         }
@@ -58,6 +97,10 @@ namespace Core.IntegrationTests
             var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowOrchestrationOptions());
 
             await orchestrator.StartNew();
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            Trace.WriteLine("Done");
         }
 
         public static WorkflowEngine CreateMemoryEngine()
@@ -68,6 +111,8 @@ namespace Core.IntegrationTests
             var controlQueue = new MessageQueue<ControlMessage>();
             var eventMessageProcessor = new MessageProcessor<EventMessage>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
             var controlMessageProcessor = new MessageProcessor<ControlMessage>(controlQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
+            eventQueue.AddProcessor(eventMessageProcessor);
+            controlQueue.AddProcessor(controlMessageProcessor);
 
             var engine = new WorkflowEngine(
                 id: "test",
@@ -77,7 +122,8 @@ namespace Core.IntegrationTests
                 controlMessageSender: controlQueue,
                 eventStore: eventStore,
                 activityStateStore: activityStateStore,
-                serializer: new TestJsonSerializer());
+                serializer: new TestJsonSerializer(),
+                observer: new TraceWorkflowObserver());
 
             return engine;
         }

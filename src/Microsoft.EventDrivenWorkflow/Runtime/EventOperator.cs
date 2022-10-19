@@ -182,6 +182,12 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         }
 
         /// <summary>
+        /// Gets input events.
+        /// </summary>
+        /// <returns>A list of input events.</returns>
+        internal IEnumerable<Event> GetInputEvents() => this.inputEvents.Values;
+
+        /// <summary>
         /// Gets output events.
         /// </summary>
         /// <returns>A list of output events.</returns>

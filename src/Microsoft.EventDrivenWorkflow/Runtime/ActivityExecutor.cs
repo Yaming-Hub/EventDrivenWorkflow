@@ -109,6 +109,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 };
 
                 await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.DelayDuration);
+
+                await this.orchestrator.Engine.Observer.EventPublished(activityExecutionContext, outputEvent);
             }
 
             // TODO: If the workflow is being tracked and there is no output event published
@@ -130,11 +132,15 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             try
             {
+                await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
+
                 await activity.Execute(
                     context: context,
                     eventRetriever: eventOperator,
                     eventPublisher: eventOperator,
                     cancellationToken: CancellationToken.None);
+
+                await this.orchestrator.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
             }
             catch
             {
@@ -181,6 +187,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             try
             {
+                await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
+
                 await activity.BeginExecute(
                     context: context,
                     eventRetriever: eventOperator,

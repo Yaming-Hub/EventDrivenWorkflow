@@ -19,9 +19,9 @@ namespace Microsoft.EventDrivenWorkflow.Memory.Persistence
 
         public EntityStore()
         {
+            this.lockObject = new object();
             this.dictionary = new Dictionary<(string, string), TEntity>();
         }
-
 
         public Task<TEntity> Get(string partitionKey, string key)
         {
