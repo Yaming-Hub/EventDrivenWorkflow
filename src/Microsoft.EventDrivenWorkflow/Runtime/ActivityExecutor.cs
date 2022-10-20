@@ -51,6 +51,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 WorkflowVersion = workflowExecutionContext.WorkflowVersion,
                 WorkflowId = workflowExecutionContext.WorkflowId,
                 WorkflowStartDateTime = workflowExecutionContext.WorkflowStartDateTime,
+                Options = workflowExecutionContext.Options,
                 ActivityName = activityDefinition.Name,
                 ActivityExecutionStartDateTime = this.orchestrator.Engine.TimeProvider.UtcNow,
                 ActivityExecutionId = activityExecutionId
@@ -238,7 +239,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 WorkflowName = workflowExecutionContext.WorkflowName,
                 WorkflowVersion = workflowExecutionContext.WorkflowVersion,
                 WorkflowId = workflowExecutionContext.WorkflowId,
-                WorkflowStartDateTime = workflowExecutionContext.WorkflowStartDateTime
+                WorkflowStartDateTime = workflowExecutionContext.WorkflowStartDateTime,
+                Options = workflowExecutionContext.Options,
             };
         }
 

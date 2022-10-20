@@ -58,23 +58,25 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
             var linksElement = xmlDocument.CreateElement("Links", ns);
             graphNode.AppendChild(linksElement);
 
-            workflowDefinition.Traverse(link =>
-            {
-                if (link.Source != null)
+            workflowDefinition.Traverse(
+                visit: link =>
                 {
-                    var incomingLinkElement = xmlDocument.CreateElement("Link", ns);
-                    incomingLinkElement.SetAttribute("Source", link.Source.Name);
-                    incomingLinkElement.SetAttribute("Target", link.Target.Name);
+                    if (link.Source != null)
+                    {
+                        var incomingLinkElement = xmlDocument.CreateElement("Link", ns);
+                        incomingLinkElement.SetAttribute("Source", link.Source.Name);
+                        incomingLinkElement.SetAttribute("Target", link.Target.Name);
 
-                    var eventLabel = link.Event.PayloadType == null
-                        ? link.Event.Name
-                        : $"{link.Event.Name} ({link.Event.PayloadType.Name})";
+                        var eventLabel = link.Event.PayloadType == null
+                            ? link.Event.Name
+                            : $"{link.Event.Name} ({link.Event.PayloadType.Name})";
 
-                    incomingLinkElement.SetAttribute("Label", eventLabel);
+                        incomingLinkElement.SetAttribute("Label", eventLabel);
 
-                    linksElement.AppendChild(incomingLinkElement);
-                }
-            });
+                        linksElement.AppendChild(incomingLinkElement);
+                    }
+                },
+                visitDuplicate: null);
 
             var categoriesElement = xmlDocument.CreateElement("Categories", ns);
             graphNode.AppendChild(categoriesElement);

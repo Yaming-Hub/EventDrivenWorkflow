@@ -1,11 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ActivityDefinition.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Definitions
 {
+    /// <summary>
+    /// This class defines metadata of a workflow activity.
+    /// </summary>
     public sealed class ActivityDefinition
     {
         /// <summary>

@@ -1,14 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.Utilities;
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ActivityBuilder.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Builder
 {
-    public class WorkflowBuilder
+    using Microsoft.EventDrivenWorkflow.Definitions;
+    using Microsoft.EventDrivenWorkflow.Utilities;
+
+    /// <summary>
+    /// This class help build workflow definition.
+    /// </summary>
+    public sealed class WorkflowBuilder
     {
         private readonly List<EventBuilder> eventBuilders;
         private readonly List<ActivityBuilder> activityBuilders;
@@ -16,7 +21,12 @@ namespace Microsoft.EventDrivenWorkflow.Builder
 
         private TimeSpan maxExecuteDuration;
 
-        public WorkflowBuilder(string name)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorkflowBuilder"/> class.
+        /// </summary>
+        /// <param name="name">Name of the workflow.</param>
+        /// <param name="workflowType">The workflow type.</param>
+        public WorkflowBuilder(string name, WorkflowType workflowType = WorkflowType.Static)
         {
             if (StringConstraint.Name.IsValid(name, out string reason))
             {
@@ -24,6 +34,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
             }
 
             this.Name = name;
+            this.Type = workflowType;
             this.eventBuilders = new List<EventBuilder>();
             this.activityBuilders = new List<ActivityBuilder>();
             this.childWorkflowBuilders = new List<WorkflowBuilder>();
@@ -31,6 +42,8 @@ namespace Microsoft.EventDrivenWorkflow.Builder
         }
 
         internal string Name { get; }
+
+        internal WorkflowType Type { get; }
 
         internal IReadOnlyList<EventBuilder> EventBuilders => this.eventBuilders;
 
@@ -58,11 +71,11 @@ namespace Microsoft.EventDrivenWorkflow.Builder
             return eventBuilder;
         }
 
-        public ActivityBuilder AddActivity(string name)
+        public ActivityBuilder AddActivity(string name, bool isAsync = false)
         {
             this.EnsureActivityNameIsUnique(name);
 
-            var activityBuilder = new ActivityBuilder(name);
+            var activityBuilder = new ActivityBuilder(name, isAsync);
             this.activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
@@ -71,7 +84,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
         {
             this.EnsureActivityNameIsUnique(name);
 
-            var childWorkflowBuilder = new WorkflowBuilder(name);
+            var childWorkflowBuilder = new WorkflowBuilder(name, this.Type);
             this.childWorkflowBuilders.Add(childWorkflowBuilder);
             return childWorkflowBuilder;
         }
@@ -136,6 +149,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
             {
                 Name = workflowDefinition.Name,
                 Version = version,
+                Type = this.Type,
                 EventDefinitions = workflowDefinition.EventDefinitions,
                 ActivityDefinitions = workflowDefinition.ActivityDefinitions,
                 MaxExecuteDuration = this.maxExecuteDuration,

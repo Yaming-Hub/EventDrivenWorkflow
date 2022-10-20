@@ -35,5 +35,10 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Gets the workflow start time.
         /// </summary>
         public DateTime WorkflowStartDateTime { get; init; }
+
+        /// <summary>
+        /// Gets workflow execution options.
+        /// </summary>
+        public WorkflowExecutionOptions Options { get; init; }
     }
 }

@@ -1,18 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="WorkflowDefinitionExtensions.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Definitions
 {
+    using System.Text;
+
+    /// <summary>
+    /// This class defines extension methods of <see cref="WorkflowDefinition"/> class.
+    /// </summary>
     public static class WorkflowDefinitionExtensions
     {
-        public static void Traverse(this WorkflowDefinition workflowDefinition, Action<Link> visit, bool sort = false)
+        /// <summary>
+        /// Traverse the workflow graph.
+        /// </summary>
+        /// <param name="workflowDefinition">The workflow definition.</param>
+        /// <param name="visit">A callback method to be invoked against each workflow link.</param>
+        /// <param name="sort">Whether the to sort output event to get deterministic visiting order.</param>
+        public static void Traverse(
+            this WorkflowDefinition workflowDefinition, 
+            Action<WorkflowLink> visit,
+            Action<WorkflowLink> visitDuplicate,
+            bool sort = false)
         {
-            HashSet<Link> visited = new HashSet<Link>();
-            var queue = new Queue<Link>();
-            queue.Enqueue(new Link
+            HashSet<WorkflowLink> visited = new HashSet<WorkflowLink>();
+            var queue = new Queue<WorkflowLink>();
+            queue.Enqueue(new WorkflowLink
             {
                 Source = null,
                 Event = null,
@@ -36,7 +51,7 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
                     var outputActivity = workflowDefinition.ActivityDefinitions.Values
                         .First(a => a.InputEventDefinitions.ContainsKey(outputEventDefinition.Name));
 
-                    var outputLink = (new Link
+                    var outputLink = (new WorkflowLink
                     {
                         Source = link.Target,
                         Event = outputEventDefinition,
@@ -47,63 +62,50 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
                     {
                         queue.Enqueue(outputLink);
                     }
+                    else
+                    {
+                        visitDuplicate?.Invoke(link);
+                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Gets the signature of the workflow.
+        /// </summary>
+        /// <param name="workflowDefinition">The workflow definition.</param>
+        /// <returns>The workflow signature.</returns>
         public static string GetSignature(this WorkflowDefinition workflowDefinition)
         {
             var sb = new StringBuilder(1024);
-            workflowDefinition.Traverse(link =>
-            {
-                if (link.Source != null)
+            workflowDefinition.Traverse(
+                visit: link =>
                 {
-                    sb.Append(link.Source.Name).Append("/");
-
-                    if (link.Event.PayloadType != null)
+                    if (link.Source != null)
                     {
-                        sb.Append(link.Event.Name).Append("(").Append(link.Event.PayloadType.FullName).Append(")");
+                        sb.Append(link.Source.Name).Append("/");
+
+                        if (link.Event.PayloadType != null)
+                        {
+                            sb.Append(link.Event.Name).Append("(").Append(link.Event.PayloadType.FullName).Append(")");
+                        }
+                        else
+                        {
+                            sb.Append(link.Event.Name);
+                        }
+
+                        sb.Append("/").Append(link.Target.Name).Append(",");
                     }
                     else
                     {
-                        sb.Append(link.Event.Name);
+                        // The initializating activity doesn't have source.
+                        sb.Append(link.Target.Name).Append(",");
                     }
-
-                    sb.Append("/").Append(link.Target.Name).Append(",");
-                }
-                else
-                {
-                    // The initializating activity doesn't have source.
-                    sb.Append(link.Target.Name).Append(",");
-                }
-            });
+                },
+                visitDuplicate: null);
 
             sb.Length--; // Trim last ","
             return sb.ToString();
-        }
-
-        public class Link
-        {
-            public ActivityDefinition Source { get; init; }
-
-            public EventDefinition Event { get; init; }
-
-            public ActivityDefinition Target { get; init; }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(this.Source, this.Event, this.Target);
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (!(obj is Link that))
-                {
-                    return false;
-                }
-
-                return this.Source == that.Source && this.Event == that.Event && this.Target == that.Target;
-            }
         }
     }
 }

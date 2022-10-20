@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Definitions;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ActivityBuilder.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Builder
 {
+    using Microsoft.EventDrivenWorkflow.Definitions;
+
+    /// <summary>
+    /// This class builds workflow activity.
+    /// </summary>
     public sealed class ActivityBuilder
     {
         private readonly bool isAsync;
@@ -15,7 +19,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
 
         private TimeSpan maxExecutionDuration;
 
-        internal ActivityBuilder(string name, bool isAsync = false)
+        internal ActivityBuilder(string name, bool isAsync)
         {
             if (StringConstraint.Name.IsValid(name, out string reason))
             {

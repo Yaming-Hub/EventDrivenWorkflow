@@ -28,7 +28,7 @@ namespace Core.IntegrationTests
             var workflowDefinition = builder.Build();
             var activityFactory = new LogActivityFactory(workflowDefinition);
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
-            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowOrchestrationOptions());
+            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowExecutionOptions());
 
             await orchestrator.StartNew();
 

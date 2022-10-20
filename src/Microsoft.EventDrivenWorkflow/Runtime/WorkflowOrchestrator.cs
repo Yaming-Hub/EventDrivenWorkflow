@@ -37,7 +37,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             WorkflowEngine engine,
             WorkflowDefinition workflowDefinition,
             IActivityFactory activityFactory,
-            WorkflowOrchestrationOptions options)
+            WorkflowExecutionOptions options)
         {
             this.Engine = engine;
             this.WorkflowDefinition = workflowDefinition;
@@ -70,7 +70,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <summary>
         /// Gets the workflow orchestration options.
         /// </summary>
-        internal WorkflowOrchestrationOptions Options { get; }
+        internal WorkflowExecutionOptions Options { get; }
 
         /// <summary>
         /// Gets the activity executor.
@@ -88,8 +88,9 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Start a new workflow.
         /// </summary>
         /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
         /// <returns>The workflow id.</returns>
-        public async Task<Guid> StartNew(string partitionKey = null)
+        public async Task<Guid> StartNew(string partitionKey = null, WorkflowExecutionOptions options = null)
         {
             Guid workflowId = Guid.NewGuid();
 
@@ -98,8 +99,9 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 WorkflowName = this.WorkflowDefinition.Name,
                 WorkflowVersion = this.WorkflowDefinition.Version,
                 PartitionKey = partitionKey ?? string.Empty,
-                WorkflowStartDateTime = DateTime.UtcNow,
+                WorkflowStartDateTime = this.Engine.TimeProvider.UtcNow,
                 WorkflowId = workflowId,
+                Options = options ?? WorkflowExecutionOptions.Default,
             };
 
             var executeInitializingActivityMessage = new ControlMessage
