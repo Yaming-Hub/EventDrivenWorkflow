@@ -1,12 +1,12 @@
-﻿using System;
-// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ActivityBuilder.cs" company="Microsoft">
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="WorkflowBuilder.cs" company="Microsoft">
 //   Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Builder
 {
+    using System;
     using Microsoft.EventDrivenWorkflow.Definitions;
     using Microsoft.EventDrivenWorkflow.Utilities;
 
@@ -26,7 +26,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
         /// </summary>
         /// <param name="name">Name of the workflow.</param>
         /// <param name="workflowType">The workflow type.</param>
-        public WorkflowBuilder(string name, WorkflowType workflowType = WorkflowType.Static)
+        public WorkflowBuilder(string name, WorkflowType workflowType)
         {
             if (StringConstraint.Name.IsValid(name, out string reason))
             {
@@ -51,7 +51,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
         {
             if (this.eventBuilders.Any(eb => eb.Name == name))
             {
-                throw new InvalidOperationException($"Event {name} is already registered.");
+                throw new InvalidWorkflowException($"Event {name} is already registered.");
             }
 
             var eventBuilder = new EventBuilder(name, payloadType: null);
@@ -63,7 +63,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
         {
             if (this.eventBuilders.Any(eb => eb.Name == name))
             {
-                throw new InvalidOperationException($"Event {name} is already registered.");
+                throw new InvalidWorkflowException($"Event {name} is already registered.");
             }
 
             var eventBuilder = new EventBuilder(name, payloadType: typeof(T));
@@ -101,7 +101,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
 
             if (workflowDefinition.ActivityDefinitions.Count == 0)
             {
-                throw new InvalidOperationException($"There is no activity defined in workflow {this.Name}.");
+                throw new InvalidWorkflowException($"There is no activity defined in workflow {this.Name}.");
             }
 
             // Check there is no more than one activity subscribe to the same event.
@@ -112,7 +112,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
                 {
                     if (eventToSubscribedActivityMap.ContainsKey(inputEventName))
                     {
-                        throw new InvalidOperationException(
+                        throw new InvalidWorkflowException(
                             $"The event {inputEventName} is subscribed by both " +
                             $"{eventToSubscribedActivityMap[inputEventName].Name} activity " +
                             $" and {activityDefinition.Name} activity.");
@@ -126,25 +126,57 @@ namespace Microsoft.EventDrivenWorkflow.Builder
             if (eventToSubscribedActivityMap.Count < workflowDefinition.EventDefinitions.Count)
             {
                 var missingEvents = workflowDefinition.EventDefinitions.Keys.Except(eventToSubscribedActivityMap.Keys).ToList();
-                throw new InvalidOperationException($"There are events not be subscribed: {string.Join(",", missingEvents)}");
+                throw new InvalidWorkflowException($"There are events not be subscribed: {string.Join(",", missingEvents)}");
             }
 
-            // Make sure there is one and only one initializing activity.
-            var initializingActivities = workflowDefinition.ActivityDefinitions.Values.Where(a => a.IsInitializing).ToList();
-            if (initializingActivities.Count == 0)
+            // Find the start activity.
+            // There are 2 cases how start activity can be defined. One is the start activity do not have any input event.
+            // The other is the start activity depends on one single input event without publisher
+            var candidateStartActivities = workflowDefinition.ActivityDefinitions.Values
+                .Where(a => a.InputEventDefinitions.Count == 0)
+                .ToList();
+
+            if (candidateStartActivities.Count > 1)
             {
-                throw new InvalidOperationException($"The workflow {this.Name} has no initializing activity defined.");
+                throw new InvalidWorkflowException(
+                    $"More than one activity without input events: {string.Join(",", candidateStartActivities.Select(e => e.Name))}.");
             }
-            else if (initializingActivities.Count > 1)
+
+            var candidateStartEvents = workflowDefinition.EventDefinitions.Values
+                .Where(e => !workflowDefinition.ActivityDefinitions.Values.Any(a => a.OutputEventDefinitions.ContainsKey(e.Name)))
+                .ToList();
+
+            if (candidateStartEvents.Count > 1)
             {
-                throw new InvalidOperationException(
-                    $"The workflow {this.Name} has more than one initializing activity defined: " +
-                    $"{string.Join(",", initializingActivities.Select(x => x.Name))}.");
+                throw new InvalidWorkflowException(
+                    $"More than one event without publisher: {string.Join(",", candidateStartEvents.Select(e => e.Name))}.");
             }
+
+            if (candidateStartActivities.Count == 1 && candidateStartEvents.Count == 1)
+            {
+                throw new InvalidWorkflowException(
+                    $"Both start activity {candidateStartActivities[0].Name} and start event {candidateStartEvents[0].Name} are defined.");
+            }
+
+            if (candidateStartActivities.Count == 0 && candidateStartEvents.Count == 0)
+            {
+                throw new InvalidWorkflowException("Neither start activity nor start event is found in the workflow.");
+            }
+
+            workflowDefinition.StartActivityDefinition = candidateStartActivities.Count == 1
+                ? candidateStartActivities[0]
+                : workflowDefinition.ActivityDefinitions.Values.First(a => a.InputEventDefinitions.ContainsKey(candidateStartEvents[0].Name));
 
             // Calculate workflow version.
-            var signature = workflowDefinition.GetSignature();
+            var signature = workflowDefinition.GetSignature(out bool containsLoop);
             var version = MurmurHash3.HashToString(signature);
+
+            // Make sure the static workflow cannot have loop
+            if (this.Type == WorkflowType.Static && containsLoop)
+            {
+                throw new InvalidWorkflowException("Static workflow must not contain loop.");
+            }
+
             return new WorkflowDefinition
             {
                 Name = workflowDefinition.Name,
@@ -152,6 +184,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
                 Type = this.Type,
                 EventDefinitions = workflowDefinition.EventDefinitions,
                 ActivityDefinitions = workflowDefinition.ActivityDefinitions,
+                StartActivityDefinition = workflowDefinition.StartActivityDefinition,
                 MaxExecuteDuration = this.maxExecuteDuration,
                 EventToSubscribedActivityMap = eventToSubscribedActivityMap,
             };

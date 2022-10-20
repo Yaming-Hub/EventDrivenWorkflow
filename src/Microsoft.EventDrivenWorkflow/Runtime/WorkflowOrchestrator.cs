@@ -109,7 +109,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 Id = Guid.NewGuid(),
                 WorkflowExecutionContext = workflowExecutionContext,
                 Operation = ControlOperation.ExecuteActivity,
-                TargetActivityName = this.WorkflowDefinition.InitializingActivityDefinition.Name,
+                TargetActivityName = this.WorkflowDefinition.StartActivityDefinition.Name,
             };
 
             // Queue a control message to start the initialing activity.

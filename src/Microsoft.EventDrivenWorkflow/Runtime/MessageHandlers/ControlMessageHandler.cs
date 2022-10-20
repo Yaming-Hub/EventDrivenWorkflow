@@ -54,7 +54,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             {
                 return await operationHandler.Handle(this.orchestrator, message);
             }
-            catch (WorkflowException we)
+            catch (WorkflowRuntimeException we)
             {
                 // TODO: Track exception
                 return we.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;

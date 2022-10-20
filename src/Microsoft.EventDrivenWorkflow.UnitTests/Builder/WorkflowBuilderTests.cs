@@ -15,19 +15,19 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
         [TestMethod]
         public void BuildSingleActivityWorkflow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.AddActivity("a1");
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1", wd.GetSignature());
+            Assert.AreEqual("a1", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]
         public void BuildSequentialWorkflow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e2");
             wb.AddActivity("a1").Publish("e1");
@@ -36,14 +36,14 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1,a1/e1/a2,a2/e2/a3", wd.GetSignature());
+            Assert.AreEqual("a1,a1/e1/a2,a2/e2/a3", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]
         public void BuildSplitWorkflow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e2");
             wb.AddActivity("a1").Publish("e1").Publish("e2");
@@ -52,14 +52,14 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1,a1/e1/a2,a1/e2/a3", wd.GetSignature());
+            Assert.AreEqual("a1,a1/e1/a2,a1/e2/a3", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]
         public void BuildAggregateWorkflow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e2");
             wb.RegisterEvent("e3");
@@ -71,28 +71,40 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1,a1/e1/a2,a1/e2/a3,a2/e3/a4,a3/e4/a4", wd.GetSignature());
+            Assert.AreEqual("a1,a1/e1/a2,a1/e2/a3,a2/e3/a4,a3/e4/a4", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]
-        public void BuildLoopWorkflow()
+        [ExpectedException(typeof(InvalidWorkflowException))]
+        public void BuildStaticWorkflowWithLoopWillThrow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
+            wb.RegisterEvent("e1");
+            wb.AddActivity("a1").Publish("e1");
+            wb.AddActivity("a2").Subscribe("e1").Publish("e1");
+
+            wb.Build();
+        }
+
+        [TestMethod]
+        public void BuildDynamicWorkfowWithLoop()
+        {
+            var wb = new WorkflowBuilder("Test", WorkflowType.Dynamic);
             wb.RegisterEvent("e1");
             wb.AddActivity("a1").Publish("e1");
             wb.AddActivity("a2").Subscribe("e1").Publish("e1");
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1,a1/e1/a2,a2/e1/a2", wd.GetSignature());
+            Assert.AreEqual("a1,a1/e1/a2,a2/e1/a2", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]
         public void BuildChildWorkflow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e2");
             wb.AddActivity("a1").Publish("e1");
@@ -106,14 +118,14 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1,a1/e1/x.a1,x.a1/xe1/x.a2,x.a2/e2/a2", wd.GetSignature());
+            Assert.AreEqual("a1,a1/e1/x.a1,x.a1/xe1/x.a2,x.a2/e2/a2", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]
         public void BuildTwoLevelChildWorkflow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e2");
             wb.RegisterEvent("e3");
@@ -133,23 +145,23 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1,a1/e1/x.a1,x.a1/xe1/x.a2,x.a1/xe2/x.y.a1,x.a2/e2/a2,x.y.a1/ye1/x.y.a2,x.y.a2/e3/a2", wd.GetSignature());
+            Assert.AreEqual("a1,a1/e1/x.a1,x.a1/xe1/x.a2,x.a1/xe2/x.y.a1,x.a2/e2/a2,x.y.a1/ye1/x.y.a2,x.y.a2/e3/a2", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
+        [ExpectedException(typeof(InvalidWorkflowException))]
         public void NoActivityWillThrow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.Build();
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
+        [ExpectedException(typeof(InvalidWorkflowException))]
         public void DuplicateEventWillThrow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e1");
 
@@ -160,10 +172,10 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
+        [ExpectedException(typeof(InvalidWorkflowException))]
         public void OrphanEventWillThrow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e2");
 
@@ -174,10 +186,10 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
 
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
+        [ExpectedException(typeof(InvalidWorkflowException))]
         public void DuplicateActivityWillThrow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.RegisterEvent("e1");
             wb.AddActivity("a1").Publish("e1").Publish("e2");
@@ -188,10 +200,9 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void NoInitializatingActivityWillThrow()
+        public void BuildWorkflowWithStartEvent()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.AddActivity("a1").Subscribe("e1");
 
@@ -199,21 +210,54 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void MultipleInitializatingActivityWillThrow()
+        [ExpectedException(typeof(InvalidWorkflowException))]
+        public void BuildWorkflowWithoutStartEventWillThrow()
         {
-            var wb = new WorkflowBuilder("Test");
-            wb.AddActivity("a1");
-            wb.AddActivity("a2");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Dynamic);
+            wb.RegisterEvent("e1");
+            wb.AddActivity("a1").Publish("e1").Subscribe("e1");
 
             wb.Build();
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
+        [ExpectedException(typeof(InvalidWorkflowException))]
+        public void BuildWorkflowWitMoreThanOneStartActivityEventWillThrow()
+        {
+            var wb = new WorkflowBuilder("Test", WorkflowType.Dynamic);
+            wb.AddActivity("a1");
+            wb.AddActivity("a2");
+            wb.Build();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidWorkflowException))]
+        public void BuildWorkflowWitMoreThanOneStartEventWillThrow()
+        {
+            var wb = new WorkflowBuilder("Test", WorkflowType.Dynamic);
+            wb.RegisterEvent("e1");
+            wb.RegisterEvent("e2");
+            wb.AddActivity("a1").Subscribe("e1").Subscribe("e2");
+
+            wb.Build();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidWorkflowException))]
+        public void BuildWorkflowWitBothStartActivityAndStartEventWillThrow()
+        {
+            var wb = new WorkflowBuilder("Test", WorkflowType.Dynamic);
+            wb.RegisterEvent("e1");
+            wb.AddActivity("a1").Subscribe("e1");
+            wb.AddActivity("a2");
+            wb.Build();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidWorkflowException))]
         public void DuplicateSubscriptionWillThrow()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent("e1");
             wb.AddActivity("a1").Publish("e1");
             wb.AddActivity("a2").Subscribe("e1");
@@ -225,14 +269,14 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests.Builder
         [TestMethod]
         public void BuildWorkflowWithPayload()
         {
-            var wb = new WorkflowBuilder("Test");
+            var wb = new WorkflowBuilder("Test", WorkflowType.Static);
             wb.RegisterEvent<string>("e1");
             wb.AddActivity("a1").Publish("e1");
             wb.AddActivity("a2").Subscribe("e1");
 
             var wd = wb.Build();
 
-            Assert.AreEqual("a1,a1/e1(System.String)/a2", wd.GetSignature());
+            Assert.AreEqual("a1,a1/e1(System.String)/a2", wd.GetSignature(out bool _));
             Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
     }

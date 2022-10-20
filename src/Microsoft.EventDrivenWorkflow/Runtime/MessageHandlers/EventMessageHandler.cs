@@ -37,7 +37,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             {
                 return await HandleInternal(message);
             }
-            catch (WorkflowException we)
+            catch (WorkflowRuntimeException we)
             {
                 // TODO: Track exception
                 return we.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
@@ -209,7 +209,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                     // Some event is missing from event store. This is permanent error and cannot be recovered.
                     var missingEventNames = activity.AvailableInputEvents.Except(inputEvents.Keys);
                     var error = $"Following events are contained in activity but not in event store: {string.Join(",", missingEventNames)}.";
-                    throw new WorkflowException(isTransient: false, error);
+                    throw new WorkflowRuntimeException(isTransient: false, error);
                 }
 
                 return true;

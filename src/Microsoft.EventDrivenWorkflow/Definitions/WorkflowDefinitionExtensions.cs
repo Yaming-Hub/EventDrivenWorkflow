@@ -20,7 +20,7 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
         /// <param name="visit">A callback method to be invoked against each workflow link.</param>
         /// <param name="sort">Whether the to sort output event to get deterministic visiting order.</param>
         public static void Traverse(
-            this WorkflowDefinition workflowDefinition, 
+            this WorkflowDefinition workflowDefinition,
             Action<WorkflowLink> visit,
             Action<WorkflowLink> visitDuplicate,
             bool sort = false)
@@ -31,14 +31,14 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
             {
                 Source = null,
                 Event = null,
-                Target = workflowDefinition.InitializingActivityDefinition
+                Target = workflowDefinition.StartActivityDefinition
             });
 
             while (queue.Count > 0)
             {
                 var link = queue.Dequeue();
 
-                visit(link);
+                visit?.Invoke(link);
                 visited.Add(link);
 
                 var outputEventDefinitions = sort
@@ -74,10 +74,13 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
         /// Gets the signature of the workflow.
         /// </summary>
         /// <param name="workflowDefinition">The workflow definition.</param>
+        /// <param name="containsLoop">Returns whether the workflow contain loop.</param>
         /// <returns>The workflow signature.</returns>
-        public static string GetSignature(this WorkflowDefinition workflowDefinition)
+        internal static string GetSignature(this WorkflowDefinition workflowDefinition, out bool containsLoop)
         {
             var sb = new StringBuilder(1024);
+            int duplicateLinkCount = 0;
+
             workflowDefinition.Traverse(
                 visit: link =>
                 {
@@ -102,7 +105,9 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
                         sb.Append(link.Target.Name).Append(",");
                     }
                 },
-                visitDuplicate: null);
+                visitDuplicate: link => { duplicateLinkCount++; });
+
+            containsLoop = duplicateLinkCount > 0;
 
             sb.Length--; // Trim last ","
             return sb.ToString();

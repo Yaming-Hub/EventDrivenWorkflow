@@ -51,12 +51,7 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
         /// <summary>
         /// Gets the initializing activity definition of the workflow.
         /// </summary>
-        public ActivityDefinition InitializingActivityDefinition => this.ActivityDefinitions.Values.First(a => a.IsInitializing);
-
-        /// <summary>
-        /// Gets the terminating activity definitions of the workflow.
-        /// </summary>
-        public IEnumerable<ActivityDefinition> TerminatingActivityDefinitions => this.ActivityDefinitions.Values.Where(a => a.IsTerminating);
+        public ActivityDefinition StartActivityDefinition { get; internal set; }
 
         /// <summary>
         /// Gets a map from event to subscribed activity.

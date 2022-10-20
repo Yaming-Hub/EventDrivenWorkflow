@@ -9,6 +9,7 @@ using Microsoft.EventDrivenWorkflow.Memory.Persistence;
 using Microsoft.EventDrivenWorkflow.Diagnostics;
 using Microsoft.EventDrivenWorkflow.IntegrationTests;
 using Microsoft.EventDrivenWorkflow.IntegrationTests.Environment;
+using Microsoft.EventDrivenWorkflow.Definitions;
 
 namespace Core.IntegrationTests
 {
@@ -18,7 +19,7 @@ namespace Core.IntegrationTests
         [TestMethod]
         public async Task TestSimpleWorkflow()
         {
-            var builder = new WorkflowBuilder("Test");
+            var builder = new WorkflowBuilder("Test", WorkflowType.Static);
             builder.RegisterEvent("e1");
             builder.RegisterEvent("e2");
             builder.AddActivity("a1").Publish("e1");
