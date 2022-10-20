@@ -37,17 +37,15 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             {
                 return await HandleInternal(message);
             }
-            catch (WorkflowRuntimeException we)
+            catch (WorkflowRuntimeException wre)
             {
-                // TODO: Track exception
-                return we.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
+                await this.orchestrator.Engine.Observer.HandleEventMessageFailed(wre, message);
+                return wre.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
             }
-            catch
+            catch (Exception e)
             {
-                // TODO: Track exception
-
-                // Unknown exception will be considered as traisent.
-                return MessageHandleResult.Yield;
+                await this.orchestrator.Engine.Observer.HandleEventMessageFailed(e, message);
+                return MessageHandleResult.Yield; // Unknown exception will be considered as traisent.
             }
         }
 
@@ -63,30 +61,29 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             if (!workflowDefinition.EventDefinitions.TryGetValue(message.EventName, out var eventDefinition))
             {
                 // Got an unknown event. This may happen if the workflow is changed.
-                // TODO: Report unknown event error.
-                return MessageHandleResult.Complete;
+                throw new WorkflowRuntimeException(
+                    isTransient: false,
+                    $"Event {message.EventName}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] is not defined in the " +
+                    $"workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
             }
 
             if (eventDefinition.PayloadType?.FullName != message.PayloadType)
             {
                 // The incoming event payload type doesn't match the event definition, the workflow logic may have been changed.
-                // TODO: Report invalid event error.
-                return MessageHandleResult.Complete;
+                throw new WorkflowRuntimeException(
+                    isTransient: false,
+                    $"Event {message.EventName}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] payload type "+ 
+                    $"{message.PayloadType ?? "<null>"} doesn't match event definition {eventDefinition.PayloadType.GetDisplayName()} " +
+                    $"of workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
             }
 
-            // Find the activity that subscribe to the current event. Please note, there should be no more than one activity
-            // subscribe to the same event in the workflow.
-            if (!workflowDefinition.EventToSubscribedActivityMap.TryGetValue(message.EventName, out var activityDefinition))
-            {
-                // This may happen if the workflow is changed.
-                // TODO: Report unsubscribed event error.
-                return MessageHandleResult.Complete;
-            }
+            // Find the activity that subscribe to the current event.
+            var activityDefinition = workflowDefinition.EventToSubscribedActivityMap[message.EventName];
 
-            var eventData = MapToEvent(message, eventDefinition.PayloadType);
+            var @event = MapToEvent(message, eventDefinition.PayloadType);
             var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count)
             {
-                [message.EventName] = eventData
+                [message.EventName] = @event
             };
 
             if (activityDefinition.InputEventDefinitions.Count > 1)
@@ -99,7 +96,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                     activityDefinition,
                     message.WorkflowExecutionContext,
                     message,
-                    eventData,
+                    @event,
                     inputEvents);
 
                 if (!allInputEventsAvailable)

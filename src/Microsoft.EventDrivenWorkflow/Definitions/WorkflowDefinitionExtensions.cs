@@ -71,6 +71,14 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
         }
 
         /// <summary>
+        /// Gets string contains name and version of the workflow definition.
+        /// </summary>
+        /// <param name="workflowDefinition">The workflow definition.</param>
+        /// <returns>A string contains name and version of the workflow definition.</returns>
+        internal static string GetNameAndVersion(this WorkflowDefinition workflowDefinition)
+            => $"{workflowDefinition.Name}(ver:{workflowDefinition.Version}";
+
+        /// <summary>
         /// Gets the signature of the workflow.
         /// </summary>
         /// <param name="workflowDefinition">The workflow definition.</param>

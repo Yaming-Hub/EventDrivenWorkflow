@@ -90,7 +90,34 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="partitionKey">The partition key of the workflow.</param>
         /// <param name="options">The workflow execution options.</param>
         /// <returns>The workflow id.</returns>
-        public async Task<Guid> StartNew(string partitionKey = null, WorkflowExecutionOptions options = null)
+        public Task<Guid> StartNew(string partitionKey = null, WorkflowExecutionOptions options = null)
+        {
+
+            return StartNew(payloadType: null, payload: null, partitionKey: partitionKey, options: options);
+        }
+
+        /// <summary>
+        /// Start a new workflow with payload.
+        /// </summary>
+        /// <typeparam name="T">Type of the start event payload.</typeparam>
+        /// <param name="payload">The payload of the start event.</param>
+        /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
+        /// <returns>The workflow id.</returns>
+        public Task<Guid> StartNew<T>(T payload, string partitionKey = null, WorkflowExecutionOptions options = null)
+        {
+            return StartNew(payloadType: typeof(T), payload: payload, partitionKey: partitionKey, options: options);
+        }
+
+        /// <summary>
+        /// Start new workflow.
+        /// </summary>
+        /// <param name="payloadType">Type of the start event payload.</param>
+        /// <param name="payload">The payload of the start event.</param>
+        /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
+        /// <returns>The workflow id.</returns>
+        private async Task<Guid> StartNew(Type payloadType, object payload, string partitionKey, WorkflowExecutionOptions options)
         {
             Guid workflowId = Guid.NewGuid();
 
@@ -104,16 +131,51 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 Options = options ?? WorkflowExecutionOptions.Default,
             };
 
-            var executeInitializingActivityMessage = new ControlMessage
-            {
-                Id = Guid.NewGuid(),
-                WorkflowExecutionContext = workflowExecutionContext,
-                Operation = ControlOperation.ExecuteActivity,
-                TargetActivityName = this.WorkflowDefinition.StartActivityDefinition.Name,
-            };
+            var startActivityDefinition = this.WorkflowDefinition.StartActivityDefinition;
 
-            // Queue a control message to start the initialing activity.
-            await this.Engine.ControlMessageSender.Send(executeInitializingActivityMessage);
+            if (startActivityDefinition.InputEventDefinitions.Count == 0)
+            {
+                if (payloadType != null || payload == null)
+                {
+                    throw new InvalidOperationException("The workflow cannot start with payload.");
+                }
+
+                var executeStartActivityMessage = new ControlMessage
+                {
+                    Id = Guid.NewGuid(),
+                    WorkflowExecutionContext = workflowExecutionContext,
+                    Operation = ControlOperation.ExecuteActivity,
+                    TargetActivityName = startActivityDefinition.Name,
+                };
+
+                // Queue a control message to trigger the start activity.
+                await this.Engine.ControlMessageSender.Send(executeStartActivityMessage);
+            }
+            else
+            {
+                var startEventDefinition = startActivityDefinition.InputEventDefinitions.Values.First();
+                if (startEventDefinition.PayloadType != payloadType)
+                {
+                    throw new InvalidOperationException(
+                        $"The payload type {payloadType} doesn't match start event payload type {startEventDefinition.PayloadType}");
+                }
+
+                var startEventMessage = new EventMessage
+                {
+                    Id = Guid.NewGuid(),
+                    WorkflowExecutionContext = workflowExecutionContext,
+                    SourceEngineId = this.Engine.Id,
+                    DelayDuration = TimeSpan.Zero,
+                    EventName = startEventDefinition.Name,
+                    Payload = payload == null ? null : this.Engine.Serializer.Serialize(payload),
+                    PayloadType = payloadType?.FullName,
+                    SourceActivityExecutionId = Guid.Empty,
+                    SourceActivityName = null
+                };
+
+                // Queue the start event message to trigger the start activity.
+                await this.Engine.EventMessageSender.Send(startEventMessage);
+            }
 
             await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
 

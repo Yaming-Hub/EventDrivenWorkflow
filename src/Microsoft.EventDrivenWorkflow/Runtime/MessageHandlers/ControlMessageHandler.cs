@@ -54,17 +54,15 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             {
                 return await operationHandler.Handle(this.orchestrator, message);
             }
-            catch (WorkflowRuntimeException we)
+            catch (WorkflowRuntimeException wre)
             {
-                // TODO: Track exception
-                return we.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
+                await this.orchestrator.Engine.Observer.HandleControlMessageFailed(wre, message);
+                return wre.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
             }
-            catch
+            catch (Exception e)
             {
-                // TODO: Track exception
-
-                // Unknown exception will be considered as traisent.
-                return MessageHandleResult.Yield;
+                await this.orchestrator.Engine.Observer.HandleControlMessageFailed(e, message);
+                return MessageHandleResult.Yield; // Unknown exception will be considered as traisent.
             }
         }
     }

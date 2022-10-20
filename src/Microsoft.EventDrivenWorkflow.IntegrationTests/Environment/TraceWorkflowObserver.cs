@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Diagnostics;
 using Microsoft.EventDrivenWorkflow.Runtime;
+using Microsoft.EventDrivenWorkflow.Runtime.Model;
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
 {
@@ -39,6 +40,26 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
         public Task WorkflowCompleted(WorkflowExecutionContext context)
         {
             return Log($"WorkflowCompleted  Workflow={context.GetPath()}");
+        }
+
+        public Task HandleEventMessageFailed(Exception exception, EventMessage eventMessage)
+        {
+            return Log($"HandleEventMessageFailed {exception}");
+        }
+
+        public Task HandleControlMessageFailed(Exception exception, ControlMessage eventMessage)
+        {
+            return Log($"HandleControlMessageFailed {exception}");
+        }
+
+        public Task ActivityExecutionFailed(Exception exception, ActivityExecutionContext context)
+        {
+            return Log($"ActivityExecutionFailed {exception} Activity={context.GetPath()}");
+        }
+
+        public Task ActivityExecutionTimeout(ActivityExecutionContext context)
+        {
+            return Log($"ActivityExecutionTimeout Activity={context.GetPath()}");
         }
 
         private static Task Log(string text)

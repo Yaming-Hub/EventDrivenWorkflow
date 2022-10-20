@@ -131,21 +131,35 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         {
             var activity = this.orchestrator.ActivityFactory.CreateActivity(context.ActivityName);
 
+            await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
+
+            var cancellationTokenSource = new CancellationTokenSource(delay: activityDefinition.MaxExecuteDuration);
+
+            bool succeeded = false;
+
             try
             {
-                await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
-
                 await activity.Execute(
                     context: context,
                     eventRetriever: eventOperator,
                     eventPublisher: eventOperator,
-                    cancellationToken: CancellationToken.None);
+                    cancellationToken: cancellationTokenSource.Token);
+
+                succeeded = true;
 
                 await this.orchestrator.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
             }
-            catch
+            catch (OperationCanceledException oce) when (oce.CancellationToken == cancellationTokenSource.Token)
             {
-                // TODO (ymliu): Handle exceptions.
+                await this.orchestrator.Engine.Observer.ActivityExecutionTimeout(context);
+
+                // TODO: Activity timeout
+            }
+            catch (Exception e)
+            {
+                await this.orchestrator.Engine.Observer.ActivityExecutionFailed(e, context);
+
+                // TODO: Handle exceptions.
             }
             finally
             {
@@ -173,7 +187,14 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 }
             }
 
-            await this.PublishOutputEvents(context, activityDefinition, eventOperator);
+            if (succeeded)
+            {
+                await this.PublishOutputEvents(context, activityDefinition, eventOperator);
+            }
+            else
+            {
+                // Retry.
+            }
         }
 
         /// <summary>

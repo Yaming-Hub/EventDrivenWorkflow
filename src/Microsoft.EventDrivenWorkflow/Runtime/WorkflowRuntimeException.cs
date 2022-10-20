@@ -9,14 +9,14 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
     /// <summary>
     /// This class defines a workflow runtime exception.
     /// </summary>
-    internal sealed class WorkflowRuntimeException : Exception
+    public sealed class WorkflowRuntimeException : Exception
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="WorkflowRuntimeException"/> instance.
         /// </summary>
         /// <param name="isTransient">Whether the failure is transient or not.</param>
         /// <param name="message">The error message.</param>
-        public WorkflowRuntimeException(bool isTransient, string message)
+        internal WorkflowRuntimeException(bool isTransient, string message)
             : this(isTransient, message, innerException: null)
         {
         }
@@ -27,7 +27,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="isTransient">Whether the failure is transient or not.</param>
         /// <param name="message">The error message.</param>
         /// <param name="innerException">The inner exception.</param>
-        public WorkflowRuntimeException(bool isTransient, string message, Exception innerException)
+        internal WorkflowRuntimeException(bool isTransient, string message, Exception innerException)
             : base(message, innerException)
         {
             this.IsTransient = isTransient;

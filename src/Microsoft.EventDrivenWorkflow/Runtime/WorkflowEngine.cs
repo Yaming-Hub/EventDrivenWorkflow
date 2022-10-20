@@ -49,7 +49,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             this.EventStore = eventStore;
             this.ActivityStateStore = activityStateStore;
             this.Serializer = serializer;
-            this.Observer = observer ?? new NoOpWorkflowObserver();
+            this.Observer = new SafeWorkflowObserver(observer);
             this.TimeProvider = timeProvider ?? new DefaultTimeProvider();
         }
 
