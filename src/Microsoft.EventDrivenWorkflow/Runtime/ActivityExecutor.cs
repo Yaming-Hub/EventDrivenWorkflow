@@ -51,6 +51,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 WorkflowVersion = workflowExecutionContext.WorkflowVersion,
                 WorkflowId = workflowExecutionContext.WorkflowId,
                 WorkflowStartDateTime = workflowExecutionContext.WorkflowStartDateTime,
+                WorkflowExpireDateTime = workflowExecutionContext.WorkflowExpireDateTime,
                 Options = workflowExecutionContext.Options,
                 ActivityName = activityDefinition.Name,
                 ActivityExecutionStartDateTime = this.orchestrator.Engine.TimeProvider.UtcNow,
@@ -138,7 +139,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <returns>A task represents the async operation.</returns>
         private async Task ExecuteSync(ActivityExecutionContext context, ActivityDefinition activityDefinition, EventOperator eventOperator)
         {
-            var activity = this.orchestrator.ActivityFactory.CreateActivity(context.ActivityName);
+            var activity = this.orchestrator.ExecutableFactory.CreateExecutable(context.ActivityName);
 
             await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
 
@@ -214,7 +215,16 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <returns>A task represents the async operation.</returns>
         private async Task ExecuteAsync(ActivityExecutionContext context, ActivityDefinition activityDefinition, EventOperator eventOperator)
         {
-            var activity = this.orchestrator.ActivityFactory.CreateAsyncActivity(context.ActivityName);
+            var activity = this.orchestrator.ExecutableFactory.CreateAsyncExecutable(context.ActivityName);
+
+            await this.orchestrator.Engine.ActivityExecutionContextStore.Upsert(
+                partitionKey: context.PartitionKey,
+                key: context.QualifiedExecutionId.ToString(),
+                new Entity<ActivityExecutionContext>
+                {
+                    Value = context,
+                    ExpireDateTime = context.WorkflowExpireDateTime,
+                });
 
             try
             {
@@ -222,8 +232,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
                 await activity.BeginExecute(
                     context: context,
-                    eventRetriever: eventOperator,
-                    cancellationToken: CancellationToken.None);
+                    eventRetriever: eventOperator);
             }
             catch
             {
@@ -270,6 +279,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 WorkflowVersion = workflowExecutionContext.WorkflowVersion,
                 WorkflowId = workflowExecutionContext.WorkflowId,
                 WorkflowStartDateTime = workflowExecutionContext.WorkflowStartDateTime,
+                WorkflowExpireDateTime = workflowExecutionContext.WorkflowExpireDateTime,
                 Options = workflowExecutionContext.Options,
             };
         }

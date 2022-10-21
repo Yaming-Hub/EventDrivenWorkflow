@@ -125,8 +125,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             var activityKey = GetActivityKey(wec.WorkflowName, wec.WorkflowId, activityDefinition.Name, wec.PartitionKey);
             var eventKey = GetEventKey(wec.WorkflowName, wec.WorkflowId, @event.Name, wec.PartitionKey);
 
-            var now = this.orchestrator.Engine.TimeProvider.UtcNow;
-            var expireDateTime = now + this.orchestrator.WorkflowDefinition.MaxExecuteDuration;
             var activityStateEntity = await orchestrator.Engine.ActivityStateStore.GetOrAdd(
                 wec.PartitionKey,
                 activityKey,
@@ -140,7 +138,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                         Name = activityDefinition.Name,
                         AvailableInputEvents = new List<string> { @event.Name }
                     },
-                    ExpireDateTime = expireDateTime
+                    ExpireDateTime = wec.WorkflowExpireDateTime,
                 });
 
 
@@ -149,7 +147,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             var eventEntity = new Entity<EventModel>
             {
                 Value = message.Value,
-                ExpireDateTime = expireDateTime
+                ExpireDateTime = wec.WorkflowExpireDateTime
             };
 
             await orchestrator.Engine.EventStore.Upsert(wec.PartitionKey, eventKey, eventEntity);

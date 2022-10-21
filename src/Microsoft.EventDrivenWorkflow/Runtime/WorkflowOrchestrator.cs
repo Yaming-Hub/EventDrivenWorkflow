@@ -31,15 +31,15 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// </summary>
         /// <param name="engine">The workflow engine.</param>
         /// <param name="workflowDefinition">The workflow definition.</param>
-        /// <param name="activityFactory">The activity factory.</param>
+        /// <param name="executableFactory">The executable factory.</param>
         public WorkflowOrchestrator(
             WorkflowEngine engine,
             WorkflowDefinition workflowDefinition,
-            IActivityFactory activityFactory)
+            IExecutableFactory executableFactory)
         {
             this.Engine = engine;
             this.WorkflowDefinition = workflowDefinition;
-            this.ActivityFactory = activityFactory;
+            this.ExecutableFactory = executableFactory;
 
             this.eventMessageHandler = new EventMessageHandler(this);
             this.controlMessageHandler = new ControlMessageHandler(this);
@@ -60,9 +60,9 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         internal WorkflowDefinition WorkflowDefinition { get; }
 
         /// <summary>
-        /// Gets the activity factory.
+        /// Gets the executable factory.
         /// </summary>
-        internal IActivityFactory ActivityFactory { get; }
+        internal IExecutableFactory ExecutableFactory { get; }
 
         /// <summary>
         /// Gets the activity executor.
@@ -118,8 +118,9 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             {
                 WorkflowName = this.WorkflowDefinition.Name,
                 WorkflowVersion = this.WorkflowDefinition.Version,
-                PartitionKey = partitionKey ?? string.Empty,
+                PartitionKey = partitionKey,
                 WorkflowStartDateTime = this.Engine.TimeProvider.UtcNow,
+                WorkflowExpireDateTime = this.Engine.TimeProvider.UtcNow + this.WorkflowDefinition.MaxExecuteDuration,
                 WorkflowId = workflowId,
                 Options = options,
             };
@@ -201,39 +202,41 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="context">The activity execution context.</param>
         /// <param name="outputEvents">An array contains output events.</param>
         /// <returns>A task represents the async operation.</returns>
-        public async Task EndExecute(ActivityExecutionContext context, Action<IEventPublisher> publishOutputEvent)
+        public async Task EndExecute(QualifiedExecutionId qualifiedExecutionId, Action<ActivityExecutionContext, IEventPublisher> publishOutputEvent)
         {
             var workflowDefinition = this.WorkflowDefinition;
-            if (workflowDefinition.Name != context.WorkflowName)
+
+            var contextEntity = await this.Engine.ActivityExecutionContextStore.Get(qualifiedExecutionId.PartitionKey, key: qualifiedExecutionId.ToString());
+            if (workflowDefinition.Name != contextEntity.Value.WorkflowName)
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity in workflow {context.WorkflowName} " +
+                    $"Cannot complete activity in workflow {contextEntity.Value.WorkflowName} " +
                     $"using completer of workflow {workflowDefinition.Name}.");
             }
 
             // TODO: Compare workflow version.
 
-            if (!workflowDefinition.ActivityDefinitions.TryGetValue(context.ActivityName, out var activityDefinition))
+            if (!workflowDefinition.ActivityDefinitions.TryGetValue(contextEntity.Value.ActivityName, out var activityDefinition))
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity {context.ActivityName} because it is not " +
+                    $"Cannot complete activity {contextEntity.Value.ActivityName} because it is not " +
                     $"defined in workflow {workflowDefinition.Name}.");
             }
 
             EventOperator eventOperator = new EventOperator(
                 this,
                 activityDefinition,
-                context,
+                contextEntity.Value,
                 inputEvents: new Dictionary<string, Event>());
 
             if (publishOutputEvent != null)
             {
-                publishOutputEvent(eventOperator);
+                publishOutputEvent(contextEntity.Value, eventOperator);
             }
 
-            await this.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
+            await this.Engine.Observer.ActivityCompleted(contextEntity.Value, eventOperator.GetOutputEvents());
 
-            await this.ActivityExecutor.PublishOutputEvents(context, activityDefinition, eventOperator);
+            await this.ActivityExecutor.PublishOutputEvents(contextEntity.Value, activityDefinition, eventOperator);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IActivityFactory.cs" company="Microsoft">
+// <copyright file="IExecutableFactory.cs" company="Microsoft">
 //   Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
@@ -7,22 +7,22 @@
 namespace Microsoft.EventDrivenWorkflow
 {
     /// <summary>
-    /// This interface defines a factory which creates activities of a workflow.
+    /// This interface defines a factory which creates executables of a workflow.
     /// </summary>
-    public interface IActivityFactory
+    public interface IExecutableFactory
     {
         /// <summary>
-        /// Creates a synchronous activity.
+        /// Creates a synchronous executable for the activity.
         /// </summary>
         /// <param name="name">The activity name.</param>
-        /// <returns>The synchronous activity instance.</returns>
-        IActivity CreateActivity(string name);
+        /// <returns>The synchronous executable instance.</returns>
+        IExecutable CreateExecutable(string name);
 
         /// <summary>
-        /// Creates an asynchronous activity.
+        /// Creates an asynchronous executable for the activity.
         /// </summary>
         /// <param name="name">The activity name.</param>
-        /// <returns>The asynchronous activity instance.</returns>
-        IAsyncActivity CreateAsyncActivity(string name);
+        /// <returns>The asynchronous executable instance.</returns>
+        IAsyncExecutable CreateAsyncExecutable(string name);
     }
 }

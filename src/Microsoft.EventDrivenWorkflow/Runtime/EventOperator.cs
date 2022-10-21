@@ -8,7 +8,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     using Microsoft.EventDrivenWorkflow.Definitions;
     using Microsoft.EventDrivenWorkflow.Runtime.Data;
- 
+
     /// <summary>
     /// This class defines the event operator of an activity.
     /// </summary>
@@ -153,11 +153,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
         private void ValidateOutputEvent(string eventName, Type payloadType)
         {
-            if (this.ActivityDefinition.IsAsync)
-            {
-                throw new InvalidOperationException("Events can only published for synchronized activity.");
-            }
-
             if (string.IsNullOrEmpty(eventName))
             {
                 throw new ArgumentException("Event must have name");

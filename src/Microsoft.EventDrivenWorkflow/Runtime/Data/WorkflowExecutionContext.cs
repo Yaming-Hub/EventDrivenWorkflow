@@ -4,7 +4,7 @@
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
 
-namespace Microsoft.EventDrivenWorkflow.Runtime
+namespace Microsoft.EventDrivenWorkflow.Runtime.Data
 {
     /// <summary>
     /// This class defines the workflow execution context.
@@ -35,6 +35,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Gets the workflow start time.
         /// </summary>
         public DateTime WorkflowStartDateTime { get; init; }
+
+        /// <summary>
+        /// Gets the workflow expire time.
+        /// </summary>
+        public DateTime WorkflowExpireDateTime { get; init; }
 
         /// <summary>
         /// Gets workflow execution options.

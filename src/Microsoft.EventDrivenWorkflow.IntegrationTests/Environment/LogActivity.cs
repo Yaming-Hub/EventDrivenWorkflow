@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.Runtime;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
 {
-    public class LogActivity : IActivity
+    public class LogActivity : IExecutable
     {
         private readonly WorkflowDefinition workflowDefinition;
 

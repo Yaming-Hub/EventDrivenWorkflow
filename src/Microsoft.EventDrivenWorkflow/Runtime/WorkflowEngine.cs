@@ -27,7 +27,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="eventStore">The event store.</param>
         /// <param name="activityStateStore">The activity state store.</param>
         /// <param name="serializer">The serializer.</param>
-        /// 
         /// <param name="timeProvider">The time provider.</param>
         public WorkflowEngine(
             string id,
@@ -38,6 +37,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             ISerializer serializer,
             IEntityStore<Entity<EventModel>> eventStore,
             IEntityStore<Entity<ActivityState>> activityStateStore,
+            IEntityStore<Entity<ActivityExecutionContext>> activityExecutionContextStore,
             IWorkflowObserver observer,
             ITimeProvider timeProvider = null)
         {
@@ -48,6 +48,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             this.ControlMessageSender = controlMessageSender;
             this.EventStore = eventStore;
             this.ActivityStateStore = activityStateStore;
+            this.ActivityExecutionContextStore = activityExecutionContextStore;
             this.Serializer = serializer;
             this.Observer = new SafeWorkflowObserver(observer);
             this.TimeProvider = timeProvider ?? new DefaultTimeProvider();
@@ -87,6 +88,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Gets the activity state store.
         /// </summary>
         internal IEntityStore<Entity<ActivityState>> ActivityStateStore { get; }
+
+        /// <summary>
+        /// Gets the activity execution context store.
+        /// </summary>
+        internal IEntityStore<Entity<ActivityExecutionContext>> ActivityExecutionContextStore { get; }
 
         /// <summary>
         /// Gets the serializer.

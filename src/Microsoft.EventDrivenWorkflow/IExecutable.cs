@@ -1,17 +1,17 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IActivity.cs" company="Microsoft">
+// <copyright file="IExecutable.cs" company="Microsoft">
 //   Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow
 {
-    using Microsoft.EventDrivenWorkflow.Runtime;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     /// <summary>
-    /// This interface defines a workflow activity. The activity is the atom operation in a workflow.
+    /// This interface defines a workflow activity execution logic which is the atom operation in a workflow.
     /// </summary>
-    public interface IActivity
+    public interface IExecutable
     {
         /// <summary>
         /// Execute the activity.

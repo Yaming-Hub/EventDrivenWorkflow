@@ -4,7 +4,7 @@
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
 
-namespace Microsoft.EventDrivenWorkflow.Runtime
+namespace Microsoft.EventDrivenWorkflow.Runtime.Data
 {
     /// <summary>
     /// This class defines options of workflow orchestration.

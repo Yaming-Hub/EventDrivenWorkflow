@@ -38,7 +38,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
             this.eventBuilders = new List<EventBuilder>();
             this.activityBuilders = new List<ActivityBuilder>();
             this.childWorkflowBuilders = new List<WorkflowBuilder>();
-            this.maxExecuteDuration = TimeSpan.Zero;
+            this.maxExecuteDuration = TimeSpan.FromDays(1);
         }
 
         internal string Name { get; }

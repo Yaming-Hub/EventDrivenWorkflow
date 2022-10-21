@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IAsyncActivity.cs" company="Microsoft">
+// <copyright file="IAsyncExecutable.cs" company="Microsoft">
 //   Copyright (c) Microsoft Corporation. All rights reserved.
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
@@ -7,15 +7,16 @@
 namespace Microsoft.EventDrivenWorkflow
 {
     using Microsoft.EventDrivenWorkflow.Runtime;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     /// <summary>
-    /// This interface defines an asynchronous activity. The asynchronous activity is useful when the
+    /// This interface defines an asynchronous executable. The asynchronous activity is useful when the
     /// activity triggers an external operation and rely on callback of the external system to complete.
     /// For example, if the activity startds an Azure Data Factory pipeline, upon completion the ADF
     /// pipeline notifies the application. In this case, the notification handler will call workflow
     /// orchestrator to complete the activity and move on.
     /// </summary>
-    public interface IAsyncActivity
+    public interface IAsyncExecutable
     {
         /// <summary>
         /// Begin execute the activity, the activity will remain executing after this event completes.
@@ -28,7 +29,6 @@ namespace Microsoft.EventDrivenWorkflow
         /// <returns>A task represents the async operation.</returns>
         Task BeginExecute(
             ActivityExecutionContext context,
-            IEventRetriever eventRetriever,
-            CancellationToken cancellationToken);
+            IEventRetriever eventRetriever);
     }
 }

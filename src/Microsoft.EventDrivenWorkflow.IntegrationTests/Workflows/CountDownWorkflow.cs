@@ -7,46 +7,45 @@ using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Builder;
 using Microsoft.EventDrivenWorkflow.Definitions;
 using Microsoft.EventDrivenWorkflow.IntegrationTests.Environment;
-using Microsoft.EventDrivenWorkflow.Runtime;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
 {
     public static class CountDownWorkflow
     {
-        public static (WorkflowDefinition, IActivityFactory) Build()
+        public static (WorkflowDefinition, IExecutableFactory) Build()
         {
             var builder = new WorkflowBuilder("CountDown", WorkflowType.Dynamic);
             builder.RegisterEvent<int>("countParameter");
             builder.RegisterEvent<int>("countVarible");
             builder.AddActivity("ForwardActivity").Subscribe("countParameter").Publish("countVarible");
             builder.AddActivity("CountDownActivity").Subscribe("countVarible").Publish("countVarible");
-            var wd = builder.Build();
 
-            return (builder.Build(), new ActivityFactory());
+            return (builder.Build(), new ExecutableFactory());
         }
 
-        private class ActivityFactory : IActivityFactory
+        private class ExecutableFactory : IExecutableFactory
         {
-            public IActivity CreateActivity(string name)
+            public IExecutable CreateExecutable(string name)
             {
                 switch (name)
                 {
                     case "ForwardActivity":
-                        return new ForwardActivity();
+                        return new Forward();
 
                     case "CountDownActivity":
-                        return new CountDownActivity();
+                        return new CountDown();
                 }
 
                 return null;
             }
 
-            public IAsyncActivity CreateAsyncActivity(string name)
+            public IAsyncExecutable CreateAsyncExecutable(string name)
             {
                 throw new NotImplementedException();
             }
 
-            private class ForwardActivity : IActivity
+            private class Forward : IExecutable
             {
                 public Task Execute(
                    ActivityExecutionContext context,
@@ -61,7 +60,7 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
                 }
             }
 
-            private class CountDownActivity : IActivity
+            private class CountDown : IExecutable
             {
                 public Task Execute(
                     ActivityExecutionContext context,

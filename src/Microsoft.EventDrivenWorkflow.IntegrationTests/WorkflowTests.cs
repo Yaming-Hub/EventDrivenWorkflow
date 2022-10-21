@@ -11,6 +11,7 @@ using Microsoft.EventDrivenWorkflow.IntegrationTests;
 using Microsoft.EventDrivenWorkflow.IntegrationTests.Environment;
 using Microsoft.EventDrivenWorkflow.Definitions;
 using Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows;
+using System.Threading.Tasks;
 
 namespace Core.IntegrationTests
 {
@@ -43,11 +44,30 @@ namespace Core.IntegrationTests
         public async Task TestCountDownWorkflow()
         {
             var (wd, af) = CountDownWorkflow.Build();
-;
+            ;
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var orchestrator = new WorkflowOrchestrator(engine, wd, af);
 
             await orchestrator.StartNew(payload: 3);
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            Trace.WriteLine("Done");
+        }
+
+        [TestMethod]
+        public async Task TestSimpleAsyncWorkflow()
+        {
+            var source = new TaskCompletionSource<QualifiedExecutionId>();
+            var (wd, af) = SimpleAsyncWorkflow.Build(source);
+
+            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
+            var orchestrator = new WorkflowOrchestrator(engine, wd, af);
+
+            await orchestrator.StartNew();
+
+            var qeid = await source.Task;
+            await orchestrator.EndExecute(qeid, (c, p) => { p.PublishEvent<string>("result", "the-async-result"); });
 
             await Task.Delay(TimeSpan.FromSeconds(3));
 

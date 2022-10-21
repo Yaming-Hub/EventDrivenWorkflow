@@ -7,7 +7,7 @@ using Microsoft.EventDrivenWorkflow.Definitions;
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
 {
-    public class LogActivityFactory : IActivityFactory
+    public class LogActivityFactory : IExecutableFactory
     {
         private WorkflowDefinition workflowDefinition;
 
@@ -16,12 +16,12 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
             this.workflowDefinition = workflowDefinition;
         }
 
-        public IActivity CreateActivity(string name)
+        public IExecutable CreateExecutable(string name)
         {
             return new LogActivity(this.workflowDefinition);
         }
 
-        public IAsyncActivity CreateAsyncActivity(string name)
+        public IAsyncExecutable CreateAsyncExecutable(string name)
         {
             throw new NotImplementedException();
         }
