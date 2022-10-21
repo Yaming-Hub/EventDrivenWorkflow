@@ -3,7 +3,7 @@ using Microsoft.EventDrivenWorkflow;
 using Microsoft.EventDrivenWorkflow.Builder;
 using Microsoft.EventDrivenWorkflow.Runtime;
 using Microsoft.EventDrivenWorkflow.Runtime.IntegrationTests;
-using Microsoft.EventDrivenWorkflow.Runtime.Model;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 using Microsoft.EventDrivenWorkflow.Memory.Messaging;
 using Microsoft.EventDrivenWorkflow.Memory.Persistence;
 using Microsoft.EventDrivenWorkflow.Diagnostics;

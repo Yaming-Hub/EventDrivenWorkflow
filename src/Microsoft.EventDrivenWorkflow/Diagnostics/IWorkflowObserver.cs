@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Definitions;
 using Microsoft.EventDrivenWorkflow.Runtime;
-using Microsoft.EventDrivenWorkflow.Runtime.Model;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
 namespace Microsoft.EventDrivenWorkflow.Diagnostics
 {
@@ -23,9 +23,9 @@ namespace Microsoft.EventDrivenWorkflow.Diagnostics
 
         Task WorkflowCompleted(WorkflowExecutionContext context);
 
-        Task HandleEventMessageFailed(Exception exception, EventMessage eventMessage);
+        Task HandleEventMessageFailed(Exception exception, Message<EventModel> eventMessage);
 
-        Task HandleControlMessageFailed(Exception exception, ControlMessage eventMessage);
+        Task HandleControlMessageFailed(Exception exception, Message<ControlModel> eventMessage);
 
         Task ActivityExecutionFailed(Exception exception, ActivityExecutionContext context);
 

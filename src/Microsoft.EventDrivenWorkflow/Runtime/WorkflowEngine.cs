@@ -9,7 +9,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
     using Microsoft.EventDrivenWorkflow.Diagnostics;
     using Microsoft.EventDrivenWorkflow.Messaging;
     using Microsoft.EventDrivenWorkflow.Persistence;
-    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     /// <summary>
     /// This class defines a workflow engine.
@@ -31,13 +31,13 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="timeProvider">The time provider.</param>
         public WorkflowEngine(
             string id,
-            IMessageProcessor<EventMessage> eventMessageProcessor,
-            IMessageProcessor<ControlMessage> controlMessageProcessor,
-            IMessageSender<EventMessage> eventMessageSender,
-            IMessageSender<ControlMessage> controlMessageSender,
+            IMessageProcessor<Message<EventModel>> eventMessageProcessor,
+            IMessageProcessor<Message<ControlModel>> controlMessageProcessor,
+            IMessageSender<Message<EventModel>> eventMessageSender,
+            IMessageSender<Message<ControlModel>> controlMessageSender,
             ISerializer serializer,
-            IEntityStore<EventEntity> eventStore,
-            IEntityStore<ActivityStateEntity> activityStateStore,
+            IEntityStore<Entity<EventModel>> eventStore,
+            IEntityStore<Entity<ActivityState>> activityStateStore,
             IWorkflowObserver observer,
             ITimeProvider timeProvider = null)
         {
@@ -61,32 +61,32 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <summary>
         /// Gets the event message processor.
         /// </summary>
-        internal IMessageProcessor<EventMessage> EventMessageProcessor { get; }
+        internal IMessageProcessor<Message<EventModel>> EventMessageProcessor { get; }
 
         /// <summary>
         /// Gets the control message processor.
         /// </summary>
-        internal IMessageProcessor<ControlMessage> ControlMessageProcessor { get; }
+        internal IMessageProcessor<Message<ControlModel>> ControlMessageProcessor { get; }
 
         /// <summary>
         /// Gets event message sender.
         /// </summary>
-        internal IMessageSender<EventMessage> EventMessageSender { get; }
+        internal IMessageSender<Message<EventModel>> EventMessageSender { get; }
 
         /// <summary>
         /// Gets control message sender.
         /// </summary>
-        internal IMessageSender<ControlMessage> ControlMessageSender { get; }
+        internal IMessageSender<Message<ControlModel>> ControlMessageSender { get; }
 
         /// <summary>
         /// Gets the event store.
         /// </summary>
-        internal IEntityStore<EventEntity> EventStore { get; }
+        internal IEntityStore<Entity<EventModel>> EventStore { get; }
 
         /// <summary>
         /// Gets the activity state store.
         /// </summary>
-        internal IEntityStore<ActivityStateEntity> ActivityStateStore { get; }
+        internal IEntityStore<Entity<ActivityState>> ActivityStateStore { get; }
 
         /// <summary>
         /// Gets the serializer.

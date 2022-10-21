@@ -9,13 +9,13 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Microsoft.EventDrivenWorkflow.Messaging;
-    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     internal sealed class ExecuteActivityOperationHandler : IControlOperationHandler
     {
-        public async Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, ControlMessage message)
+        public async Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, Message<ControlModel> message)
         {
-            if (string.IsNullOrEmpty(message.TargetActivityName))
+            if (string.IsNullOrEmpty(message.Value.TargetActivityName))
             {
                 // This is invalid message.
                 // TODO: Report unknown event error.
@@ -23,7 +23,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             }
 
             if (!orchestrator.WorkflowDefinition.ActivityDefinitions.TryGetValue(
-                message.TargetActivityName, out var activityDefinition))
+                message.Value.TargetActivityName, out var activityDefinition))
             {
                 // The target activity is not defined. This may happen if the workflow is changed.
                 // TODO: Report unknown event error.

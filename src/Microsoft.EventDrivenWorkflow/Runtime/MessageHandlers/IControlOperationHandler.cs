@@ -7,7 +7,7 @@
 namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 {
     using Microsoft.EventDrivenWorkflow.Messaging;
-    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     /// <summary>
     /// This interface defines a control operation handler.
@@ -20,6 +20,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
         /// <param name="orchestrator">The workflow orchestrator.</param>
         /// <param name="message">The control message.</param>
         /// <returns>The handle result.</returns>
-        Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, ControlMessage message);
+        Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, Message<ControlModel> message);
     }
 }

@@ -8,7 +8,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     using Microsoft.EventDrivenWorkflow.Definitions;
     using Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers;
-    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     /// <summary>
     /// This class orchestrates the workflow execution. It can start a new workflow and
@@ -135,17 +135,19 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             if (startActivityDefinition.InputEventDefinitions.Count == 0)
             {
-                if (payloadType != null || payload == null)
+                if (payloadType != null || payload != null)
                 {
                     throw new InvalidOperationException("The workflow cannot start with payload.");
                 }
 
-                var executeStartActivityMessage = new ControlMessage
+                var executeStartActivityMessage = new Message<ControlModel>
                 {
-                    Id = Guid.NewGuid(),
+                    Value = new ControlModel
+                    {
+                        Operation = ControlOperation.ExecuteActivity,
+                        TargetActivityName = startActivityDefinition.Name,
+                    },
                     WorkflowExecutionContext = workflowExecutionContext,
-                    Operation = ControlOperation.ExecuteActivity,
-                    TargetActivityName = startActivityDefinition.Name,
                 };
 
                 // Queue a control message to trigger the start activity.
@@ -160,17 +162,21 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                         $"The payload type {payloadType} doesn't match start event payload type {startEventDefinition.PayloadType}");
                 }
 
-                var startEventMessage = new EventMessage
+                var startEventMessage = new Message<EventModel>
                 {
-                    Id = Guid.NewGuid(),
+                    Value = new EventModel
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = startEventDefinition.Name,
+                        SourceEngineId = this.Engine.Id,
+                        DelayDuration = TimeSpan.Zero,
+                        Payload = payloadType == null ? null : new Payload
+                        {
+                            TypeName = payloadType.FullName,
+                            Body = payload == null ? null : this.Engine.Serializer.Serialize(payload),
+                        }
+                    },
                     WorkflowExecutionContext = workflowExecutionContext,
-                    SourceEngineId = this.Engine.Id,
-                    DelayDuration = TimeSpan.Zero,
-                    EventName = startEventDefinition.Name,
-                    Payload = payload == null ? null : this.Engine.Serializer.Serialize(payload),
-                    PayloadType = payloadType?.FullName,
-                    SourceActivityExecutionId = Guid.Empty,
-                    SourceActivityName = null
                 };
 
                 // Queue the start event message to trigger the start activity.
@@ -181,11 +187,13 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             if (this.Options.TrackProgress)
             {
-                var trackWorkflowTimeoutMessage = new ControlMessage
+                var trackWorkflowTimeoutMessage = new Message<ControlModel>
                 {
-                    Id = Guid.NewGuid(),
+                    Value = new ControlModel
+                    {
+                        Operation = ControlOperation.WorkflowTimeout,
+                    },
                     WorkflowExecutionContext = workflowExecutionContext,
-                    Operation = ControlOperation.WorkflowTimeout,
                 };
 
                 await this.Engine.ControlMessageSender.Send(trackWorkflowTimeoutMessage);

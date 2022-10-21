@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Memory.Messaging;
 using Microsoft.EventDrivenWorkflow.Memory.Persistence;
 using Microsoft.EventDrivenWorkflow.Runtime.IntegrationTests;
-using Microsoft.EventDrivenWorkflow.Runtime.Model;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 using Microsoft.EventDrivenWorkflow.Runtime;
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
@@ -15,12 +15,12 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
     {
         public static WorkflowEngine CreateMemoryEngine()
         {
-            var eventStore = new EntityStore<EventEntity>();
-            var activityStateStore = new EntityStore<ActivityStateEntity>();
-            var eventQueue = new MessageQueue<EventMessage>();
-            var controlQueue = new MessageQueue<ControlMessage>();
-            var eventMessageProcessor = new MessageProcessor<EventMessage>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
-            var controlMessageProcessor = new MessageProcessor<ControlMessage>(controlQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
+            var eventStore = new EntityStore<Entity<EventModel>>();
+            var activityStateStore = new EntityStore<Entity<ActivityState>>();
+            var eventQueue = new MessageQueue<Message<EventModel>>();
+            var controlQueue = new MessageQueue<Message<ControlModel>>();
+            var eventMessageProcessor = new MessageProcessor<Message<EventModel>>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
+            var controlMessageProcessor = new MessageProcessor<Message<ControlModel>>(controlQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
             eventQueue.AddProcessor(eventMessageProcessor);
             controlQueue.AddProcessor(controlMessageProcessor);
 

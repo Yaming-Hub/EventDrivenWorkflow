@@ -7,7 +7,7 @@
 namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     using Microsoft.EventDrivenWorkflow.Definitions;
-    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
  
     /// <summary>
     /// This class defines the event operator of an activity.

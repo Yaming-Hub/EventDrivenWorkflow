@@ -10,6 +10,6 @@ namespace Microsoft.EventDrivenWorkflow.Persistence
     {
         string ETag { get; set; }
 
-        DateTime ExpireDateTime { get; set; }
+        DateTime ExpireDateTime { get; init; }
     }
 }

@@ -7,13 +7,13 @@
 namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
 {
     using Microsoft.EventDrivenWorkflow.Messaging;
-    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     /// <summary>
     /// This message handler handles control messages. It dispatches the control operation to the
     /// corresponding control operation handers.
     /// </summary>
-    internal sealed class ControlMessageHandler : IMessageHandler<ControlMessage>
+    internal sealed class ControlMessageHandler : IMessageHandler<Message<ControlModel>>
     {
         private readonly WorkflowOrchestrator orchestrator;
         private readonly IReadOnlyDictionary<ControlOperation, IControlOperationHandler> operationHandlers;
@@ -36,7 +36,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
         }
 
         /// <inheritdoc/>
-        public async Task<MessageHandleResult> Handle(ControlMessage message)
+        public async Task<MessageHandleResult> Handle(Message<ControlModel> message)
         {
             if (message.WorkflowExecutionContext.WorkflowName != this.orchestrator.WorkflowDefinition.Name)
             {
@@ -44,7 +44,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             }
 
             // Dispatch the message to pre-registered operation handler
-            if (!this.operationHandlers.TryGetValue(message.Operation, out var operationHandler))
+            if (!this.operationHandlers.TryGetValue(message.Value.Operation, out var operationHandler))
             {
                 // TODO: Report failure as we don't know how to hander this operation.
                 return MessageHandleResult.Complete;

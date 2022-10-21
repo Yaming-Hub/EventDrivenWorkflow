@@ -8,7 +8,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 {
     using System.Text;
     using Microsoft.EventDrivenWorkflow.Definitions;
-    using Microsoft.EventDrivenWorkflow.Runtime.Model;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
     using Microsoft.EventDrivenWorkflow.Utilities;
 
     /// <summary>
@@ -97,16 +97,25 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 var payloadType = eventDefinition.PayloadType;
                 object payload = outputEvent.GetPayload(payloadType);
 
-                var message = new EventMessage
+                var message = new Message<EventModel>
                 {
-                    Id = outputEvent.Id,
-                    SourceEngineId = outputEvent.SourceEngineId,
+                    Value = new EventModel
+                    {
+                        Id = outputEvent.Id,
+                        SourceEngineId = outputEvent.SourceEngineId,
+                        Name = outputEvent.Name,
+                        Payload = new Payload
+                        {
+                            TypeName = payloadType?.FullName,
+                            Body = payload == null ? null : this.orchestrator.Engine.Serializer.Serialize(payload),
+                        }
+                    },
                     WorkflowExecutionContext = CopyWorkflowExecutionInfo(activityExecutionContext), // Trim the activity part from context
-                    EventName = outputEvent.Name,
-                    SourceActivityName = activityExecutionContext.ActivityName,
-                    SourceActivityExecutionId = activityExecutionContext.ActivityExecutionId,
-                    PayloadType = payloadType?.FullName,
-                    Payload = payload == null ? null : this.orchestrator.Engine.Serializer.Serialize(payload),
+                    SourceActivity = new ActivityReference
+                    {
+                        Name = activityExecutionContext.ActivityName,
+                        ExecutionId = activityExecutionContext.ActivityExecutionId,
+                    }
                 };
 
                 await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.DelayDuration);

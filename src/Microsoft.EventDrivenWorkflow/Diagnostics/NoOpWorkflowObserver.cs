@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Runtime;
-using Microsoft.EventDrivenWorkflow.Runtime.Model;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
 namespace Microsoft.EventDrivenWorkflow.Diagnostics
 {
@@ -39,12 +39,12 @@ namespace Microsoft.EventDrivenWorkflow.Diagnostics
             return Task.CompletedTask;
         }
 
-        public Task HandleEventMessageFailed(Exception context, EventMessage eventMessage)
+        public Task HandleEventMessageFailed(Exception context, Message<EventModel> eventMessage)
         {
             return Task.CompletedTask;
         }
 
-        public Task HandleControlMessageFailed(Exception context, ControlMessage controlMessage)
+        public Task HandleControlMessageFailed(Exception context, Message<ControlModel> controlMessage)
         {
             return Task.CompletedTask;
         }
