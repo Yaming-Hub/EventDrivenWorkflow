@@ -90,7 +90,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 var eventOfPayloadType = typeof(Event<>).MakeGenericType(payloadType);
 
                 var eParameter = Expression.Parameter(typeof(Event), "e");
-                var pParameter = Expression.Parameter(payloadType, "p");
+                var pParameter = Expression.Parameter(typeof(object), "p");
 
                 var xVariable = Expression.Variable(eventOfPayloadType, "x");
                 var eventConstructor = Expression.New(eventOfPayloadType.GetConstructor(Array.Empty<Type>()));
@@ -120,16 +120,18 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
                 var convertX = Expression.Convert(xVariable, typeof(Event));
 
-                LabelTarget returnTarget = Expression.Label(eventOfPayloadType);
-                GotoExpression returnExpression = Expression.Return(returnTarget, convertX, typeof(Event));
-                LabelExpression returnLabel = Expression.Label(returnTarget);
+                LabelTarget returnTarget = Expression.Label(typeof(Event));
+                GotoExpression returnExpression = Expression.Return(returnTarget, convertX);
 
+                // Note, the defaultValue must be specified if there is a return type defined.
+                LabelExpression returnLabel = Expression.Label(returnTarget, defaultValue: Expression.Constant(null, typeof(Event)));
 
                 expressions.Add(returnExpression);
                 expressions.Add(returnLabel);
 
-                var block = Expression.Block(expressions);
-                var lamda = Expression.Lambda<Func<Event, object, Event>>(block);
+                // Variable definitions must be specified separately from other expressions.
+                var block = Expression.Block(new[] { xVariable }, expressions);
+                var lamda = Expression.Lambda<Func<Event, object, Event>>(block, eParameter, pParameter);
 
                 setter = lamda.Compile();
 

@@ -10,6 +10,7 @@ using Microsoft.EventDrivenWorkflow.Diagnostics;
 using Microsoft.EventDrivenWorkflow.IntegrationTests;
 using Microsoft.EventDrivenWorkflow.IntegrationTests.Environment;
 using Microsoft.EventDrivenWorkflow.Definitions;
+using Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows;
 
 namespace Core.IntegrationTests
 {
@@ -29,9 +30,24 @@ namespace Core.IntegrationTests
             var workflowDefinition = builder.Build();
             var activityFactory = new LogActivityFactory(workflowDefinition);
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
-            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory, new WorkflowExecutionOptions());
+            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory);
 
             await orchestrator.StartNew();
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            Trace.WriteLine("Done");
+        }
+
+        [TestMethod]
+        public async Task TestCountDownWorkflow()
+        {
+            var (wd, af) = CountDownWorkflow.Build();
+;
+            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
+            var orchestrator = new WorkflowOrchestrator(engine, wd, af);
+
+            await orchestrator.StartNew(payload: 3);
 
             await Task.Delay(TimeSpan.FromSeconds(3));
 

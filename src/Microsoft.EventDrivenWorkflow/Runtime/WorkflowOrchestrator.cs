@@ -32,17 +32,14 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="engine">The workflow engine.</param>
         /// <param name="workflowDefinition">The workflow definition.</param>
         /// <param name="activityFactory">The activity factory.</param>
-        /// <param name="options">The workflow orchestration options.</param>
         public WorkflowOrchestrator(
             WorkflowEngine engine,
             WorkflowDefinition workflowDefinition,
-            IActivityFactory activityFactory,
-            WorkflowExecutionOptions options)
+            IActivityFactory activityFactory)
         {
             this.Engine = engine;
             this.WorkflowDefinition = workflowDefinition;
             this.ActivityFactory = activityFactory;
-            this.Options = options;
 
             this.eventMessageHandler = new EventMessageHandler(this);
             this.controlMessageHandler = new ControlMessageHandler(this);
@@ -66,11 +63,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Gets the activity factory.
         /// </summary>
         internal IActivityFactory ActivityFactory { get; }
-
-        /// <summary>
-        /// Gets the workflow orchestration options.
-        /// </summary>
-        internal WorkflowExecutionOptions Options { get; }
 
         /// <summary>
         /// Gets the activity executor.
@@ -120,6 +112,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         private async Task<Guid> StartNew(Type payloadType, object payload, string partitionKey, WorkflowExecutionOptions options)
         {
             Guid workflowId = Guid.NewGuid();
+            options = options ?? WorkflowExecutionOptions.Default;
 
             var workflowExecutionContext = new WorkflowExecutionContext
             {
@@ -128,7 +121,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 PartitionKey = partitionKey ?? string.Empty,
                 WorkflowStartDateTime = this.Engine.TimeProvider.UtcNow,
                 WorkflowId = workflowId,
-                Options = options ?? WorkflowExecutionOptions.Default,
+                Options = options,
             };
 
             var startActivityDefinition = this.WorkflowDefinition.StartActivityDefinition;
@@ -185,7 +178,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
 
-            if (this.Options.TrackProgress)
+            if (options.TrackProgress)
             {
                 var trackWorkflowTimeoutMessage = new Message<ControlModel>
                 {
