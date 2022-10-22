@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.EventDrivenWorkflow.Persistence;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
+using System.Collections;
 
 namespace Microsoft.EventDrivenWorkflow.Memory.Persistence
 {
@@ -100,6 +102,20 @@ namespace Microsoft.EventDrivenWorkflow.Memory.Persistence
             lock (this.lockObject)
             {
                 dictionary[(partitionKey, key)] = CopyAndUpdateEtag(entity);
+            }
+
+            return Task.CompletedTask;
+        }
+
+
+        public Task Delete(string partitionKey, string key)
+        {
+            lock (this.lockObject)
+            {
+                if (dictionary.ContainsKey((partitionKey, key)))
+                {
+                    dictionary.Remove((partitionKey, key));
+                }
             }
 
             return Task.CompletedTask;

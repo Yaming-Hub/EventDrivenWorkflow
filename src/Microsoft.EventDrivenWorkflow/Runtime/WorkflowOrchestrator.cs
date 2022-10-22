@@ -9,6 +9,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
     using Microsoft.EventDrivenWorkflow.Definitions;
     using Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers;
     using Microsoft.EventDrivenWorkflow.Runtime.Data;
+    using Microsoft.EventDrivenWorkflow.Persistence;
 
     /// <summary>
     /// This class orchestrates the workflow execution. It can start a new workflow and
@@ -206,37 +207,57 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         {
             var workflowDefinition = this.WorkflowDefinition;
 
-            var contextEntity = await this.Engine.ActivityExecutionContextStore.Get(qualifiedExecutionId.PartitionKey, key: qualifiedExecutionId.ToString());
-            if (workflowDefinition.Name != contextEntity.Value.WorkflowName)
+            ActivityExecutionContext context = null;
+            string key = qualifiedExecutionId.ToString();
+
+            try
+            {
+                var contextEntity = await this.Engine.ActivityExecutionContextStore.Get(qualifiedExecutionId.PartitionKey, key);
+                context = contextEntity.Value;
+            }
+            catch (StoreException se) when (se.ErrorCode == StoreErrorCode.NotFound)
+            {
+                throw new WorkflowRuntimeException(
+                    isTransient: false,
+                    message: $"Cannot complete {qualifiedExecutionId} because the context is not found. The activity may have already completed or expired.",
+                    se);
+            }
+
+            if (workflowDefinition.Name != context.WorkflowName)
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity in workflow {contextEntity.Value.WorkflowName} " +
+                    $"Cannot complete activity in workflow {context.WorkflowName} " +
                     $"using completer of workflow {workflowDefinition.Name}.");
             }
 
             // TODO: Compare workflow version.
 
-            if (!workflowDefinition.ActivityDefinitions.TryGetValue(contextEntity.Value.ActivityName, out var activityDefinition))
+            if (!workflowDefinition.ActivityDefinitions.TryGetValue(context.ActivityName, out var activityDefinition))
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity {contextEntity.Value.ActivityName} because it is not " +
+                    $"Cannot complete activity {context.ActivityName} because it is not " +
                     $"defined in workflow {workflowDefinition.Name}.");
             }
 
             EventOperator eventOperator = new EventOperator(
                 this,
                 activityDefinition,
-                contextEntity.Value,
+                context,
                 inputEvents: new Dictionary<string, Event>());
 
             if (publishOutputEvent != null)
             {
-                publishOutputEvent(contextEntity.Value, eventOperator);
+                publishOutputEvent(context, eventOperator);
             }
 
-            await this.Engine.Observer.ActivityCompleted(contextEntity.Value, eventOperator.GetOutputEvents());
+            await this.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
 
-            await this.ActivityExecutor.PublishOutputEvents(contextEntity.Value, activityDefinition, eventOperator);
+            await this.ActivityExecutor.PublishOutputEvents(context, activityDefinition, eventOperator);
+
+            // Delete the context. Please note, if the EndExecute() is called multiple times before the context is deleted
+            // it's possible that the output events will be published multiple times. This is acceptable as the workflow 
+            // guarantee at least once execution, and downstream activity could be triggered more than once.
+            await this.Engine.ActivityExecutionContextStore.Delete(qualifiedExecutionId.PartitionKey, key);
         }
     }
 }

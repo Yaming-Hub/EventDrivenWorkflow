@@ -17,5 +17,7 @@ namespace Microsoft.EventDrivenWorkflow.Persistence
         Task Upsert(string partitionKey, string key, TEntity entity);
 
         Task Update(string partitionKey, string key, TEntity entity);
+
+        Task Delete(string partitionKey, string key);
     }
 }
