@@ -1,24 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.Runtime.Data;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="IWorkflowObserver.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Diagnostics
 {
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
+
     public interface IWorkflowObserver
     {
         Task WorkflowStarted(WorkflowExecutionContext context);
 
         Task EventAccepted(WorkflowExecutionContext context, Event @event);
 
-        Task ActivityStarting(ActivityExecutionContext context, IEnumerable<Event> inputEvents);
+        Task ActivityStarting(ExecutionContext context, IEnumerable<Event> inputEvents);
 
-        Task ActivityCompleted(ActivityExecutionContext context, IEnumerable<Event> outputEvents);
+        Task ActivityCompleted(ExecutionContext context, IEnumerable<Event> outputEvents);
 
-        Task EventPublished(WorkflowExecutionContext context, Event @event);
+        Task EventPublished(ExecutionContext context, Event @event);
 
         Task WorkflowCompleted(WorkflowExecutionContext context);
 
@@ -26,8 +26,8 @@ namespace Microsoft.EventDrivenWorkflow.Diagnostics
 
         Task HandleControlMessageFailed(Exception exception, Message<ControlModel> eventMessage);
 
-        Task ActivityExecutionFailed(Exception exception, ActivityExecutionContext context);
+        Task ActivityExecutionFailed(Exception exception, ExecutionContext context);
 
-        Task ActivityExecutionTimeout(ActivityExecutionContext context);
+        Task ActivityExecutionTimeout(ExecutionContext context);
     }
 }

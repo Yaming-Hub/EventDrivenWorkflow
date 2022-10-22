@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
 namespace Microsoft.EventDrivenWorkflow
 {
@@ -22,13 +23,28 @@ namespace Microsoft.EventDrivenWorkflow
         /// </summary>
         private static readonly Regex Regex = new Regex(pattern: Pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        internal QualifiedExecutionId()
+        {
+        }
+
         public string PartitionKey { get; init; }
 
         public string WorkflowName { get; init; }
 
         public string ActivityName { get; init; }
 
-        public Guid ExecutionId { get; init; }
+        public Guid ActivityExecutionId { get; init; }
+
+        public static QualifiedExecutionId FromContext(WorkflowExecutionContext wec, ActivityExecutionContext aec)
+        {
+            return new QualifiedExecutionId
+            {
+                PartitionKey = wec.PartitionKey,
+                WorkflowName = wec.WorkflowName,
+                ActivityName = aec.ActivityName,
+                ActivityExecutionId = aec.ActivityExecutionId
+            };
+        }
 
         public static bool TryParse(string str, out QualifiedExecutionId qualifiedExecutionId)
         {
@@ -46,7 +62,7 @@ namespace Microsoft.EventDrivenWorkflow
                     PartitionKey = partition,
                     WorkflowName = workflow,
                     ActivityName = activity,
-                    ExecutionId = Guid.Parse(id)
+                    ActivityExecutionId = Guid.Parse(id)
                 };
                 return true;
             }
@@ -57,7 +73,7 @@ namespace Microsoft.EventDrivenWorkflow
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(this.PartitionKey, this.WorkflowName, this.ActivityName, this.ExecutionId);
+            return HashCode.Combine(this.PartitionKey, this.WorkflowName, this.ActivityName, this.ActivityExecutionId);
         }
 
         public override bool Equals(object obj)
@@ -70,7 +86,7 @@ namespace Microsoft.EventDrivenWorkflow
             return this.PartitionKey == that.PartitionKey
                 && this.WorkflowName == that.WorkflowName
                 && this.ActivityName == that.ActivityName
-                && this.ExecutionId == that.ExecutionId;
+                && this.ActivityExecutionId == that.ActivityExecutionId;
         }
 
         public override string ToString()
@@ -83,7 +99,7 @@ namespace Microsoft.EventDrivenWorkflow
 
             sb.Append(this.WorkflowName);
             sb.Append("/activities/").Append(this.ActivityName);
-            sb.Append("/").Append(this.ExecutionId);
+            sb.Append("/").Append(this.ActivityExecutionId);
 
             return sb.ToString();
         }

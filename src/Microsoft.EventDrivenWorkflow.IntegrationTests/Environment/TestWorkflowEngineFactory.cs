@@ -1,23 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Memory.Messaging;
-using Microsoft.EventDrivenWorkflow.Memory.Persistence;
-using Microsoft.EventDrivenWorkflow.Runtime.IntegrationTests;
-using Microsoft.EventDrivenWorkflow.Runtime.Data;
-using Microsoft.EventDrivenWorkflow.Runtime;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TestWorkflowEngineFactory.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// ---------
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
 {
+    using Microsoft.EventDrivenWorkflow.Memory.Messaging;
+    using Microsoft.EventDrivenWorkflow.Memory.Persistence;
+    using Microsoft.EventDrivenWorkflow.Runtime.IntegrationTests;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
+    using Microsoft.EventDrivenWorkflow.Runtime;
+
     public class TestWorkflowEngineFactory
     {
         public static WorkflowEngine CreateMemoryEngine()
         {
             var eventStore = new EntityStore<Entity<EventModel>>();
             var activityStateStore = new EntityStore<Entity<ActivityState>>();
-            var activityExecutionContextStore = new EntityStore<Entity<ActivityExecutionContext>>();
+            var activityExecutionContextStore = new EntityStore<Entity<ExecutionContext>>();
             var eventQueue = new MessageQueue<Message<EventModel>>();
             var controlQueue = new MessageQueue<Message<ControlModel>>();
             var eventMessageProcessor = new MessageProcessor<Message<EventModel>>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);

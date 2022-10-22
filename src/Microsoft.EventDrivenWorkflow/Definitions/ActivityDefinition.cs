@@ -29,6 +29,11 @@ namespace Microsoft.EventDrivenWorkflow.Definitions
         public bool IsAsync { get; init; }
 
         /// <summary>
+        /// Gets the retry policy.
+        /// </summary>
+        public RetryPolicy RetryPolicy { get; init; } 
+
+        /// <summary>
         /// Gets a list of input event definitions. An activity will only be triggered 
         /// if all defined input events are received.
         /// </summary>

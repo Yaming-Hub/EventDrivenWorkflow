@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Diagnostics;
-using Microsoft.EventDrivenWorkflow.Runtime.Data;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TraceWorkflowObserver.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// ---------
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
 {
+    using System.Diagnostics;
+    using Microsoft.EventDrivenWorkflow.Diagnostics;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
+
     public class TraceWorkflowObserver : IWorkflowObserver
     {
         public Task WorkflowStarted(WorkflowExecutionContext context)
@@ -21,17 +22,17 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
         }
 
-        public Task ActivityStarting(ActivityExecutionContext context, IEnumerable<Event> inputEvents)
+        public Task ActivityStarting(ExecutionContext context, IEnumerable<Event> inputEvents)
         {
             return Log($"ActivityStarting   Activity={context.GetPath()} Events={string.Join(",", inputEvents.Select(x => x.Name))}");
         }
 
-        public Task ActivityCompleted(ActivityExecutionContext context, IEnumerable<Event> outputEvents)
+        public Task ActivityCompleted(ExecutionContext context, IEnumerable<Event> outputEvents)
         {
             return Log($"ActivityCompleted  Activity={context.GetPath()} Events={string.Join(",", outputEvents.Select(x => x.Name))}");
         }
 
-        public Task EventPublished(WorkflowExecutionContext context, Event @event)
+        public Task EventPublished(ExecutionContext context, Event @event)
         {
             return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
         }
@@ -51,12 +52,12 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"HandleControlMessageFailed {exception}");
         }
 
-        public Task ActivityExecutionFailed(Exception exception, ActivityExecutionContext context)
+        public Task ActivityExecutionFailed(Exception exception, ExecutionContext context)
         {
             return Log($"ActivityExecutionFailed {exception} Activity={context.GetPath()}");
         }
 
-        public Task ActivityExecutionTimeout(ActivityExecutionContext context)
+        public Task ActivityExecutionTimeout(ExecutionContext context)
         {
             return Log($"ActivityExecutionTimeout Activity={context.GetPath()}");
         }

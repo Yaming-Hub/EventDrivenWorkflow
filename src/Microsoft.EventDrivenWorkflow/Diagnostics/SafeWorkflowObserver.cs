@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Runtime.Data;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="SafeWorkflowObserver.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.Diagnostics
 {
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
+
     internal sealed class SafeWorkflowObserver : IWorkflowObserver
     {
         private readonly IWorkflowObserver observer;
@@ -21,12 +22,12 @@ namespace Microsoft.EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.WorkflowStarted(context));
         }
 
-        public Task ActivityCompleted(ActivityExecutionContext context, IEnumerable<Event> outputEvents)
+        public Task ActivityCompleted(ExecutionContext context, IEnumerable<Event> outputEvents)
         {
             return IgnoreException(() => observer.ActivityCompleted(context, outputEvents));
         }
 
-        public Task ActivityStarting(ActivityExecutionContext context, IEnumerable<Event> inputEvents)
+        public Task ActivityStarting(ExecutionContext context, IEnumerable<Event> inputEvents)
         {
             return IgnoreException(() => observer.ActivityStarting(context, inputEvents));
         }
@@ -36,7 +37,7 @@ namespace Microsoft.EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.EventAccepted(context, @event));
         }
 
-        public Task EventPublished(WorkflowExecutionContext context, Event @event)
+        public Task EventPublished(ExecutionContext context, Event @event)
         {
             return IgnoreException(() => observer.EventPublished(context, @event));
         }
@@ -56,12 +57,12 @@ namespace Microsoft.EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.HandleControlMessageFailed(context, controlMessage));
         }
 
-        public Task ActivityExecutionFailed(Exception exception, ActivityExecutionContext context)
+        public Task ActivityExecutionFailed(Exception exception, ExecutionContext context)
         {
             return IgnoreException(() => observer.ActivityExecutionFailed(exception, context));
         }
 
-        public Task ActivityExecutionTimeout(ActivityExecutionContext context)
+        public Task ActivityExecutionTimeout(ExecutionContext context)
         {
             return IgnoreException(() => observer.ActivityExecutionTimeout(context));
         }

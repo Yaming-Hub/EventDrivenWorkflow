@@ -20,15 +20,15 @@ namespace Microsoft.EventDrivenWorkflow
     {
         /// <summary>
         /// Begin execute the activity, the activity will remain executing after this event completes.
-        /// Use <see cref="WorkflowOrchestrator.EndExecute(ActivityExecutionContext, Event[])"/> method to 
+        /// Use <see cref="WorkflowOrchestrator.EndExecute(ExecutionContext, Event[])"/> method to 
         /// complete the event execution.
         /// </summary>
-        /// <param name="context">The activity execution context.</param>
+        /// <param name="context">The execution context.</param>
         /// <param name="eventRetriever">The event retriever used to get input event payloads.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task represents the async operation.</returns>
         Task BeginExecute(
-            ActivityExecutionContext context,
+            ExecutionContext context,
             IEventRetriever eventRetriever);
     }
 }

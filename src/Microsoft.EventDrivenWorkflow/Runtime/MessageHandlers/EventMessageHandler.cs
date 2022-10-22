@@ -110,7 +110,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             await this.orchestrator.ActivityExecutor.Execute(
                 message.WorkflowExecutionContext,
                 activityDefinition,
-                inputEvents);
+                inputEvents,
+                triggerEvent: message.Value);
 
             return MessageHandleResult.Complete;
         }

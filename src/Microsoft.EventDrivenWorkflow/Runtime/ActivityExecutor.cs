@@ -35,57 +35,81 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// </summary>
         /// <param name="workflowExecutionContext">The workflow execution context.</param>
         /// <param name="activityDefinition">The activity definition.</param>
+        /// <param name="eventModel">The triggering event model.</param>
+        /// <param name="inputEvents">A dictionary contains input events.</param>
+        /// <returns>A task represents the async operation.</returns>
+        public Task Execute(
+            WorkflowExecutionContext workflowExecutionContext,
+            ActivityDefinition activityDefinition,
+            IReadOnlyDictionary<string, Event> inputEvents,
+            EventModel triggerEvent)
+        {
+            // Construct activity execution context.
+            var context = new ExecutionContext
+            {
+                WorkflowExecutionContext = workflowExecutionContext,
+                ActivityExecutionContext = new ActivityExecutionContext
+                {
+                    ActivityName = activityDefinition.Name,
+                    ActivityExecutionStartDateTime = this.orchestrator.Engine.TimeProvider.UtcNow,
+                    ActivityExecutionId = CaculateActivityExecutionId(activityDefinition.Name, inputEvents),
+                    AttemptCount = 0
+                }
+            };
+
+            return this.Execute(context, activityDefinition, inputEvents, triggerEvent);
+        }
+
+
+        /// <summary>
+        /// Execute the activity.
+        /// </summary>
+        /// <param name="wec">The workflow execution context.</param>
+        /// <param name="activityDefinition">The activity definition.</param>
+        /// <param name="eventModel">The triggering event model.</param>
         /// <param name="inputEvents">A dictionary contains input events.</param>
         /// <returns>A task represents the async operation.</returns>
         public async Task Execute(
-            WorkflowExecutionContext workflowExecutionContext,
+            ExecutionContext context,
             ActivityDefinition activityDefinition,
-            IReadOnlyDictionary<string, Event> inputEvents)
+            IReadOnlyDictionary<string, Event> inputEvents,
+            EventModel triggerEvent)
         {
-            // Construct activity execution id and context.
-            var activityExecutionId = CaculateActivityExecutionId(activityDefinition.Name, inputEvents);
-            var activityExecutionContext = new ActivityExecutionContext
-            {
-                PartitionKey = workflowExecutionContext.PartitionKey,
-                WorkflowName = workflowExecutionContext.WorkflowName,
-                WorkflowVersion = workflowExecutionContext.WorkflowVersion,
-                WorkflowId = workflowExecutionContext.WorkflowId,
-                WorkflowStartDateTime = workflowExecutionContext.WorkflowStartDateTime,
-                WorkflowExpireDateTime = workflowExecutionContext.WorkflowExpireDateTime,
-                Options = workflowExecutionContext.Options,
-                ActivityName = activityDefinition.Name,
-                ActivityExecutionStartDateTime = this.orchestrator.Engine.TimeProvider.UtcNow,
-                ActivityExecutionId = activityExecutionId
-            };
-
-
             // Now we got all incoming events for the activity, let's run it.
             var eventOperator = new EventOperator(
                 this.orchestrator,
                 activityDefinition: activityDefinition,
-                activityExecutionContext: activityExecutionContext,
+                context: context,
                 inputEvents: inputEvents);
 
             eventOperator.ValidateInputEvents();
 
             if (activityDefinition.IsAsync)
             {
-                await this.ExecuteAsync(activityExecutionContext, activityDefinition, eventOperator);
+                await this.ExecuteAsync(
+                    context,
+                    activityDefinition,
+                    eventOperator,
+                    triggerEvent);
             }
             else
             {
-                await this.ExecuteSync(activityExecutionContext, activityDefinition, eventOperator);
+                await this.ExecuteSync(
+                    context,
+                    activityDefinition,
+                    eventOperator,
+                    triggerEvent);
             }
         }
 
         /// <summary>
         /// Publish output events.
         /// </summary>
-        /// <param name="activityExecutionContext">The activity execution context.</param>
+        /// <param name="aec">The activity execution context.</param>
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
         public async Task PublishOutputEvents(
-            ActivityExecutionContext activityExecutionContext,
+            ExecutionContext context,
             ActivityDefinition activityDefinition,
             EventOperator eventOperator)
         {
@@ -109,19 +133,19 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                         {
                             TypeName = payloadType?.FullName,
                             Body = payload == null ? null : this.orchestrator.Engine.Serializer.Serialize(payload),
+                        },
+                        SourceActivity = new ActivityReference
+                        {
+                            Name = context.ActivityExecutionContext.ActivityName,
+                            ExecutionId = context.ActivityExecutionContext.ActivityExecutionId,
                         }
                     },
-                    WorkflowExecutionContext = CopyWorkflowExecutionInfo(activityExecutionContext), // Trim the activity part from context
-                    SourceActivity = new ActivityReference
-                    {
-                        Name = activityExecutionContext.ActivityName,
-                        ExecutionId = activityExecutionContext.ActivityExecutionId,
-                    }
+                    WorkflowExecutionContext = context.WorkflowExecutionContext, // Trim the activity part from context
                 };
 
                 await this.orchestrator.Engine.EventMessageSender.Send(message, outputEvent.DelayDuration);
 
-                await this.orchestrator.Engine.Observer.EventPublished(activityExecutionContext, outputEvent);
+                await this.orchestrator.Engine.Observer.EventPublished(context, outputEvent);
             }
 
             // TODO: If the workflow is being tracked and there is no output event published
@@ -134,12 +158,16 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <summary>
         /// Execute a sync activity.
         /// </summary>
-        /// <param name="context">The activity execution context.</param>
+        /// <param name="aec">The activity execution context.</param>
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
-        private async Task ExecuteSync(ActivityExecutionContext context, ActivityDefinition activityDefinition, EventOperator eventOperator)
+        private async Task ExecuteSync(
+            ExecutionContext context,
+            ActivityDefinition activityDefinition,
+            EventOperator eventOperator,
+            EventModel triggerEvent)
         {
-            var activity = this.orchestrator.ExecutableFactory.CreateExecutable(context.ActivityName);
+            var activity = this.orchestrator.ExecutableFactory.CreateExecutable(context.ActivityExecutionContext.ActivityName);
 
             await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
 
@@ -150,7 +178,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             try
             {
                 await activity.Execute(
-                    context: context,
+                    context,
                     eventRetriever: eventOperator,
                     eventPublisher: eventOperator,
                     cancellationToken: cancellationTokenSource.Token);
@@ -203,27 +231,50 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             }
             else
             {
-                // Retry.
+                if (context.ActivityExecutionContext.AttemptCount < activityDefinition.RetryPolicy.MaxRetryCount)
+                {
+                    var controlMessage = new Message<ControlModel>
+                    {
+                        Value = new ControlModel
+                        {
+                            Event = triggerEvent,
+                            Operation = ControlOperation.ExecuteActivity,
+                            TargetActivityName = activityDefinition.Name,
+                            ActivityExecutionContext = IncrementAttemptCount(context.ActivityExecutionContext),
+                        },
+                        WorkflowExecutionContext = context.WorkflowExecutionContext,
+                    };
+
+                    await this.orchestrator.Engine.ControlMessageSender.Send(controlMessage, activityDefinition.RetryPolicy.DelayDuration);
+                }
+                else
+                {
+                    // Max retry count limit is reached.
+                    // TODO: Abandon activity.
+                }
             }
         }
 
         /// <summary>
         /// Execute an async activity.
         /// </summary>
-        /// <param name="context">The activity execution context.</param>
+        /// <param name="aec">The activity execution context.</param>
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
-        private async Task ExecuteAsync(ActivityExecutionContext context, ActivityDefinition activityDefinition, EventOperator eventOperator)
+        private async Task ExecuteAsync(
+            ExecutionContext context,
+            ActivityDefinition activityDefinition,
+            EventOperator eventOperator,
+            EventModel triggerEvent)
         {
-            var activity = this.orchestrator.ExecutableFactory.CreateAsyncExecutable(context.ActivityName);
-
+            var activity = this.orchestrator.ExecutableFactory.CreateAsyncExecutable(context.ActivityExecutionContext.ActivityName);
             await this.orchestrator.Engine.ActivityExecutionContextStore.Upsert(
-                partitionKey: context.PartitionKey,
+                partitionKey: context.WorkflowExecutionContext.PartitionKey,
                 key: context.QualifiedExecutionId.ToString(),
-                new Entity<ActivityExecutionContext>
+                new Entity<ExecutionContext>
                 {
                     Value = context,
-                    ExpireDateTime = context.WorkflowExpireDateTime,
+                    ExpireDateTime = context.WorkflowExecutionContext.WorkflowExpireDateTime,
                 });
 
             try
@@ -281,6 +332,18 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 WorkflowStartDateTime = workflowExecutionContext.WorkflowStartDateTime,
                 WorkflowExpireDateTime = workflowExecutionContext.WorkflowExpireDateTime,
                 Options = workflowExecutionContext.Options,
+            };
+        }
+
+        private static ActivityExecutionContext IncrementAttemptCount(ActivityExecutionContext activityExecutionContext)
+        {
+            return new ActivityExecutionContext
+            {
+                ActivityExecutionStartDateTime = activityExecutionContext.ActivityExecutionStartDateTime,
+                ActivityName = activityExecutionContext.ActivityName,
+                ActivityExecutionId = activityExecutionContext.ActivityExecutionId,
+
+                AttemptCount = activityExecutionContext.AttemptCount + 1,
             };
         }
 

@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.Runtime.Data;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="LogActivity.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
 {
+    using System.Diagnostics;
+    using Microsoft.EventDrivenWorkflow.Definitions;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
+
     public class LogActivity : IExecutable
     {
         private readonly WorkflowDefinition workflowDefinition;
@@ -19,14 +20,14 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
         }
 
         public Task Execute(
-            ActivityExecutionContext context,
+            ExecutionContext context,
             IEventRetriever eventRetriever,
             IEventPublisher eventPublisher,
             CancellationToken cancellationToken)
         {
             Trace.WriteLine($"Execute {context.GetPath()}");
 
-            var activityDefinition = this.workflowDefinition.ActivityDefinitions[context.ActivityName];
+            var activityDefinition = this.workflowDefinition.ActivityDefinitions[context.ActivityExecutionContext.ActivityName];
             foreach (var outputEvent in activityDefinition.OutputEventDefinitions.Values)
             {
                 eventPublisher.PublishEvent(outputEvent.Name);

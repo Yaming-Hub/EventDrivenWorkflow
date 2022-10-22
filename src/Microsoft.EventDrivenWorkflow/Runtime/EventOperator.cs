@@ -33,17 +33,17 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Initializes a new instance of the <see cref="EventOperator"/> class.
         /// </summary>
         /// <param name="activityDefinition">The execiting activity definition.</param>
-        /// <param name="activityExecutionContext">The activity execution information.</param>
+        /// <param name="context">The activity execution information.</param>
         /// <param name="inputEvents">A dictionary contains input events of the execiting activity.</param>
         internal EventOperator(
             WorkflowOrchestrator orchestrator,
             ActivityDefinition activityDefinition,
-            ActivityExecutionContext activityExecutionContext,
+            ExecutionContext context,
             IReadOnlyDictionary<string, Event> inputEvents)
         {
             this.orchestrator = orchestrator;
             this.ActivityDefinition = activityDefinition;
-            this.ActivityExecutionInfo = activityExecutionContext;
+            this.Context = context;
 
             this.inputEvents = inputEvents;
             this.outputEvents = new Dictionary<string, Event>();
@@ -57,7 +57,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <summary>
         /// Gets activity executing execution info.
         /// </summary>
-        public ActivityExecutionContext ActivityExecutionInfo { get; }
+        public ExecutionContext Context { get; }
 
         public Event GetEvent(string eventName)
         {

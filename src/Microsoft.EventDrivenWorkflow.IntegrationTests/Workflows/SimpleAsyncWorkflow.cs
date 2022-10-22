@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EventDrivenWorkflow.Builder;
-using Microsoft.EventDrivenWorkflow.Definitions;
-using Microsoft.EventDrivenWorkflow.IntegrationTests.Environment;
-using Microsoft.EventDrivenWorkflow.Runtime.Data;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="SimpleAsyncWorkflow.cs" company="Microsoft">
+//   Copyright (c) Microsoft Corporation. All rights reserved.
+// </copyright>
+// ---------
 
 namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
 {
+    using System.Diagnostics;
+    using System.Threading.Tasks;
+    using Microsoft.EventDrivenWorkflow.Builder;
+    using Microsoft.EventDrivenWorkflow.Definitions;
+    using Microsoft.EventDrivenWorkflow.Runtime.Data;
+
     public static class SimpleAsyncWorkflow
     {
         public static (WorkflowDefinition, IExecutableFactory) Build(TaskCompletionSource<QualifiedExecutionId> taskCompletionSource)
@@ -56,7 +57,7 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
             private class LogResult : IExecutable
             {
                 public Task Execute(
-                   ActivityExecutionContext context,
+                   ExecutionContext context,
                    IEventRetriever eventRetriever,
                    IEventPublisher eventPublisher,
                    CancellationToken cancellationToken)
@@ -77,7 +78,7 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
                 }
 
                 public Task BeginExecute(
-                   ActivityExecutionContext context,
+                   ExecutionContext context,
                    IEventRetriever eventRetriever)
                 {
                     Trace.WriteLine($"[AsyncExecutable.BeginExecute] Path={context.GetPath()}");

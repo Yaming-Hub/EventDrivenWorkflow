@@ -38,10 +38,30 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            await orchestrator.ActivityExecutor.Execute(
-                message.WorkflowExecutionContext,
-                activityDefinition,
-                inputEvents: new Dictionary<string, Event>());
+            if (message.Value.ActivityExecutionContext == null)
+            {
+                // New execution.
+                await orchestrator.ActivityExecutor.Execute(
+                    message.WorkflowExecutionContext,
+                    activityDefinition,
+                    inputEvents: new Dictionary<string, Event>(),
+                    triggerEvent: message.Value.Event);
+            }
+            else
+            {
+                // Retry.
+                var context = new ExecutionContext
+                {
+                    WorkflowExecutionContext = message.WorkflowExecutionContext,
+                    ActivityExecutionContext = message.Value.ActivityExecutionContext
+                };
+
+                await orchestrator.ActivityExecutor.Execute(
+                    context,
+                    activityDefinition,
+                    inputEvents: new Dictionary<string, Event>(),
+                    triggerEvent: message.Value.Event);
+            }
 
             return MessageHandleResult.Complete;
         }

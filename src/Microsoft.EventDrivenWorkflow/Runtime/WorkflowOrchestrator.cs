@@ -203,11 +203,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="context">The activity execution context.</param>
         /// <param name="outputEvents">An array contains output events.</param>
         /// <returns>A task represents the async operation.</returns>
-        public async Task EndExecute(QualifiedExecutionId qualifiedExecutionId, Action<ActivityExecutionContext, IEventPublisher> publishOutputEvent)
+        public async Task EndExecute(QualifiedExecutionId qualifiedExecutionId, Action<ExecutionContext, IEventPublisher> publishOutputEvent)
         {
             var workflowDefinition = this.WorkflowDefinition;
 
-            ActivityExecutionContext context = null;
+            ExecutionContext context = null;
             string key = qualifiedExecutionId.ToString();
 
             try
@@ -223,19 +223,19 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                     se);
             }
 
-            if (workflowDefinition.Name != context.WorkflowName)
+            if (workflowDefinition.Name != context.WorkflowExecutionContext.WorkflowName)
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity in workflow {context.WorkflowName} " +
+                    $"Cannot complete activity in workflow {context.WorkflowExecutionContext.WorkflowName} " +
                     $"using completer of workflow {workflowDefinition.Name}.");
             }
 
             // TODO: Compare workflow version.
 
-            if (!workflowDefinition.ActivityDefinitions.TryGetValue(context.ActivityName, out var activityDefinition))
+            if (!workflowDefinition.ActivityDefinitions.TryGetValue(context.ActivityExecutionContext.ActivityName, out var activityDefinition))
             {
                 throw new InvalidOperationException(
-                    $"Cannot complete activity {context.ActivityName} because it is not " +
+                    $"Cannot complete activity {context.ActivityExecutionContext.ActivityName} because it is not " +
                     $"defined in workflow {workflowDefinition.Name}.");
             }
 

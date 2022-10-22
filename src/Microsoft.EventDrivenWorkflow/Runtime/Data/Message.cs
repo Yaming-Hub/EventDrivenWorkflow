@@ -21,10 +21,5 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Data
         /// Gets the workflow execution context of the message.
         /// </summary>
         public WorkflowExecutionContext WorkflowExecutionContext { get; init; }
-
-        /// <summary>
-        /// Gets the source activity from where the message is sent.
-        /// </summary>
-        public ActivityReference SourceActivity { get; init; }
     }
 }

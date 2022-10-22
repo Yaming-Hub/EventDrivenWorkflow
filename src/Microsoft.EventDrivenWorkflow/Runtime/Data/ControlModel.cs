@@ -11,6 +11,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Data
     /// </summary>
     public sealed class ControlModel
     {
+        public ControlModel()
+        {
+
+        }
+
         /// <summary>
         /// Gets the control operation.
         /// </summary>
@@ -20,6 +25,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Data
         /// Gets the name of the target activity.
         /// </summary>
         public string TargetActivityName { get; init; }
+
+        public ActivityExecutionContext ActivityExecutionContext { get; init; }
 
         /// <summary>
         /// Gets the event model.

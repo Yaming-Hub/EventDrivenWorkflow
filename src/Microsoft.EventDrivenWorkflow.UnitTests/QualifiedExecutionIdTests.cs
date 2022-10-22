@@ -15,13 +15,13 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests
         [TestMethod]
         public void ToStringWithPartition()
         {
-            var qeid = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
+            var qeid = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
             Assert.AreEqual($"[p1]w1/activities/a1/{IdStr}", qeid.ToString());
         }
         [TestMethod]
         public void ToStringWithoutPartition()
         {
-            var qeid = new QualifiedExecutionId { WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
+            var qeid = new QualifiedExecutionId { WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
             Assert.AreEqual($"w1/activities/a1/{IdStr}", qeid.ToString());
         }
 
@@ -29,26 +29,26 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests
         public void TestTryParseWithPartition()
         {
             Assert.IsTrue(QualifiedExecutionId.TryParse($"[p1]w1/activities/a1/{IdStr}", out QualifiedExecutionId qeid));
-            Assert.IsTrue(qeid.Equals(new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id }));
+            Assert.IsTrue(qeid.Equals(new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id }));
         }
 
         [TestMethod]
         public void TestTryParseWithoutPartition()
         {
             Assert.IsTrue(QualifiedExecutionId.TryParse($"w1/activities/a1/{IdStr}", out QualifiedExecutionId qeid));
-            Assert.IsTrue(qeid.Equals(new QualifiedExecutionId { WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id }));
+            Assert.IsTrue(qeid.Equals(new QualifiedExecutionId { WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id }));
         }
 
         [TestMethod]
         public void TestEquals()
         {
-            var qeid1 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
-            var qeid2 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
-            var qeid3 = new QualifiedExecutionId { PartitionKey = "p2", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
-            var qeid4 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w2", ActivityName = "a1", ExecutionId = Id };
-            var qeid5 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a2", ExecutionId = Id };
-            var qeid6 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Guid.NewGuid() };
-            var qeid7 = new QualifiedExecutionId { WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
+            var qeid1 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
+            var qeid2 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
+            var qeid3 = new QualifiedExecutionId { PartitionKey = "p2", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
+            var qeid4 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w2", ActivityName = "a1", ActivityExecutionId = Id };
+            var qeid5 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a2", ActivityExecutionId = Id };
+            var qeid6 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Guid.NewGuid() };
+            var qeid7 = new QualifiedExecutionId { WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
 
             Assert.IsTrue(qeid1.Equals(qeid2));
             Assert.IsFalse(qeid1.Equals(qeid3));
@@ -62,8 +62,8 @@ namespace Microsoft.EventDrivenWorkflow.UnitTests
         [TestMethod]
         public void TestGetHashCode()
         {
-            var qeid1 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
-            var qeid2 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ExecutionId = Id };
+            var qeid1 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
+            var qeid2 = new QualifiedExecutionId { PartitionKey = "p1", WorkflowName = "w1", ActivityName = "a1", ActivityExecutionId = Id };
             Assert.AreEqual(qeid1.GetHashCode(), qeid2.GetHashCode());
         }
     }

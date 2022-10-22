@@ -35,5 +35,10 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Data
         /// Gets id of the engine where this event is created.
         /// </summary>
         public string SourceEngineId { get; set; }
+
+        /// <summary>
+        /// Gets the source activity from where the message is sent.
+        /// </summary>
+        public ActivityReference SourceActivity { get; init; }
     }
 }

@@ -18,6 +18,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
         private readonly List<string> outputEvents;
 
         private TimeSpan maxExecutionDuration;
+        private RetryPolicy retryPolicy;
 
         internal ActivityBuilder(string name, bool isAsync)
         {
@@ -32,6 +33,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
             this.inputEvents = new List<string>();
             this.outputEvents = new List<string>();
             this.maxExecutionDuration = TimeSpan.Zero; // unlimited
+            this.retryPolicy = RetryPolicy.DoNotRetry;
         }
 
         internal string Name { get; }
@@ -53,6 +55,27 @@ namespace Microsoft.EventDrivenWorkflow.Builder
             return this;
         }
 
+        public ActivityBuilder Retry(int maxRetryCount, TimeSpan delayDuration)
+        {
+            if (maxRetryCount < 0)
+            {
+                throw new ArgumentOutOfRangeException("The max retry count must be greater than or equal to zero.");
+            }
+
+            if (delayDuration < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException("The delay duration must be greater than or equal to zero.");
+            }
+
+            this.retryPolicy = new RetryPolicy
+            {
+                MaxRetryCount = maxRetryCount,
+                DelayDuration = delayDuration
+            };
+
+            return this;
+        }
+
         internal ActivityDefinition Build(string parentFullName, IReadOnlyDictionary<string, EventDefinition> events)
         {
             return new ActivityDefinition
@@ -62,6 +85,7 @@ namespace Microsoft.EventDrivenWorkflow.Builder
                 OutputEventDefinitions = this.ResolveEvent("output", this.outputEvents, events),
                 MaxExecuteDuration = this.maxExecutionDuration,
                 IsAsync = this.isAsync,
+                RetryPolicy = this.retryPolicy,
             };
         }
 

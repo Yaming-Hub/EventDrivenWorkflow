@@ -9,7 +9,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Data
     /// <summary>
     /// This class defines the context information of the executing activity.
     /// </summary>
-    public sealed class ActivityExecutionContext : WorkflowExecutionContext
+    public sealed class ActivityExecutionContext
     {
         /// <summary>
         /// Gets the activity name.
@@ -25,17 +25,19 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Data
         /// Gets the start time of the execution.
         /// </summary>
         public DateTime ActivityExecutionStartDateTime { get; init; }
+        
+        public int AttemptCount { get; init; }
 
-        /// <summary>
-        /// Gets the qualified execution id. A qualified execution id can uniquely identity
-        /// an activity execution.
-        /// </summary>
-        public QualifiedExecutionId QualifiedExecutionId => new QualifiedExecutionId
-        {
-            PartitionKey = PartitionKey,
-            WorkflowName = WorkflowName,
-            ActivityName = ActivityName,
-            ExecutionId = ActivityExecutionId
-        };
+        ///// <summary>
+        ///// Gets the qualified execution id. A qualified execution id can uniquely identity
+        ///// an activity execution.
+        ///// </summary>
+        //public QualifiedExecutionId QualifiedExecutionId => new QualifiedExecutionId
+        //{
+        //    PartitionKey = PartitionKey,
+        //    WorkflowName = WorkflowName,
+        //    ActivityName = ActivityName,
+        //    ExecutionId = ActivityExecutionId
+        //};
     }
 }
