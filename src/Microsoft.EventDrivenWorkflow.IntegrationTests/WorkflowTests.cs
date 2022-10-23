@@ -73,5 +73,36 @@ namespace Core.IntegrationTests
 
             Trace.WriteLine("Done");
         }
+
+
+        [TestMethod]
+        public async Task TestSimpleRetryWorkflow()
+        {
+            var (wd, af) = SimpleRetryWorkflow.Build(attempCount: 1);
+
+            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
+            var orchestrator = new WorkflowOrchestrator(engine, wd, af);
+
+            await orchestrator.StartNew();
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            Trace.WriteLine("Done");
+        }
+
+        [TestMethod]
+        public async Task TestComplexRetryWorkflow()
+        {
+            var (wd, af) = ComplexRetryWorkflow.Build(attempCount: 2);
+
+            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
+            var orchestrator = new WorkflowOrchestrator(engine, wd, af);
+
+            await orchestrator.StartNew();
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            Trace.WriteLine("Done");
+        }
     }
 }

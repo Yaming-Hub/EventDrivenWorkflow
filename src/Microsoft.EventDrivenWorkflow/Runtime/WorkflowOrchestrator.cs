@@ -44,6 +44,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
 
             this.eventMessageHandler = new EventMessageHandler(this);
             this.controlMessageHandler = new ControlMessageHandler(this);
+            this.InputEventLoader = new InputEventLoader(this);
             this.ActivityExecutor = new ActivityExecutor(this);
 
             this.Engine.EventMessageProcessor.Subscribe(this.eventMessageHandler);
@@ -65,10 +66,13 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// </summary>
         internal IExecutableFactory ExecutableFactory { get; }
 
+        internal InputEventLoader InputEventLoader { get; }
+
         /// <summary>
         /// Gets the activity executor.
         /// </summary>
         internal ActivityExecutor ActivityExecutor { get; }
+
 
         /// <inheritdoc/>
         public void Dispose()

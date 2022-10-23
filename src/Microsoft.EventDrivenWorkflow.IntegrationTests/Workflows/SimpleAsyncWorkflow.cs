@@ -10,6 +10,7 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
     using System.Threading.Tasks;
     using Microsoft.EventDrivenWorkflow.Builder;
     using Microsoft.EventDrivenWorkflow.Definitions;
+    using Microsoft.EventDrivenWorkflow.IntegrationTests.Activities;
     using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
     public static class SimpleAsyncWorkflow
@@ -37,7 +38,7 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
                 switch (name)
                 {
                     case "LogResult":
-                        return new LogResult();
+                        return new LogResult<string>();
                 }
 
                 return null;
@@ -52,20 +53,6 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Workflows
                 }
 
                 return null;
-            }
-
-            private class LogResult : IExecutable
-            {
-                public Task Execute(
-                   ExecutionContext context,
-                   IEventRetriever eventRetriever,
-                   IEventPublisher eventPublisher,
-                   CancellationToken cancellationToken)
-                {
-                    var result = eventRetriever.GetEvent<string>("result").Payload;
-                    Trace.WriteLine($"[Forward.Execute] Result={result} Path={context.GetPath()}");
-                    return Task.CompletedTask;
-                }
             }
 
             private class AsyncExecutable : IAsyncExecutable

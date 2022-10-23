@@ -73,7 +73,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             ExecutionContext context,
             ActivityDefinition activityDefinition,
             IReadOnlyDictionary<string, Event> inputEvents,
-            EventModel triggerEvent)
+            EventModel triggerEventModel)
         {
             // Now we got all incoming events for the activity, let's run it.
             var eventOperator = new EventOperator(
@@ -90,7 +90,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                     context,
                     activityDefinition,
                     eventOperator,
-                    triggerEvent);
+                    triggerEventModel);
             }
             else
             {
@@ -98,7 +98,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                     context,
                     activityDefinition,
                     eventOperator,
-                    triggerEvent);
+                    triggerEventModel);
             }
         }
 

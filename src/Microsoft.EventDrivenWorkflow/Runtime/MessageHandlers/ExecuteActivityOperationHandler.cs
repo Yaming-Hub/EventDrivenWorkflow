@@ -30,14 +30,6 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                 return MessageHandleResult.Complete;
             }
 
-            if (!activityDefinition.IsInitializing)
-            {
-                // Only initializing activity can be executed via control message.
-                // This may happen if the workflow is changed.
-                // TODO: Report unknown event error.
-                return MessageHandleResult.Complete;
-            }
-
             if (message.Value.ActivityExecutionContext == null)
             {
                 // New execution.
@@ -56,11 +48,25 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
                     ActivityExecutionContext = message.Value.ActivityExecutionContext
                 };
 
+                // Try to load all input event for the activity.
+                var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count);
+                var allInputEventsAvailable = await orchestrator.InputEventLoader.TryLoadInputEvents(
+                    activityDefinition: activityDefinition,
+                    workflowExecutionContext: message.WorkflowExecutionContext,
+                    triggerEventModel: message.Value.Event,
+                    inputEvents: inputEvents);
+
+                if (!allInputEventsAvailable)
+                {
+                    // This should not happen for retry events.
+                    throw new WorkflowRuntimeException(isTransient: false, message: "Input events for a retry event should be available.");
+                }
+
                 await orchestrator.ActivityExecutor.Execute(
                     context,
                     activityDefinition,
-                    inputEvents: new Dictionary<string, Event>(),
-                    triggerEvent: message.Value.Event);
+                    inputEvents: inputEvents,
+                    triggerEventModel: message.Value.Event);
             }
 
             return MessageHandleResult.Complete;
