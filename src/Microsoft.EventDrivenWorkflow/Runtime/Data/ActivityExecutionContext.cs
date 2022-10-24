@@ -25,7 +25,10 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.Data
         /// Gets the start time of the execution.
         /// </summary>
         public DateTime ActivityExecutionStartDateTime { get; init; }
-        
+
+        public EventReference TriggerEventReference { get; init; }
+
+
         public int AttemptCount { get; init; }
 
         ///// <summary>

@@ -38,7 +38,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// <param name="eventModel">The triggering event model.</param>
         /// <param name="inputEvents">A dictionary contains input events.</param>
         /// <returns>A task represents the async operation.</returns>
-        public Task Execute(
+        public async Task<ExecutionContext> Execute(
             WorkflowExecutionContext workflowExecutionContext,
             ActivityDefinition activityDefinition,
             IReadOnlyDictionary<string, Event> inputEvents,
@@ -53,11 +53,17 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                     ActivityName = activityDefinition.Name,
                     ActivityExecutionStartDateTime = this.orchestrator.Engine.TimeProvider.UtcNow,
                     ActivityExecutionId = CaculateActivityExecutionId(activityDefinition.Name, inputEvents),
-                    AttemptCount = 0
+                    AttemptCount = 0,
+                    TriggerEventReference = triggerEvent == null ? null : new EventReference
+                    {
+                        Id = triggerEvent.Id,
+                        Name = triggerEvent.Name,
+                    }
                 }
             };
 
-            return this.Execute(context, activityDefinition, inputEvents, triggerEvent);
+            await this.Execute(context, activityDefinition, inputEvents, triggerEvent);
+            return context;
         }
 
 
@@ -116,7 +122,8 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             eventOperator.ValidateOutputEvents();
 
             // Queue the output events.
-            foreach (var outputEvent in eventOperator.GetOutputEvents())
+            var ouptutEvents = eventOperator.GetOutputEvents().ToList();
+            foreach (var outputEvent in ouptutEvents)
             {
                 var eventDefinition = activityDefinition.OutputEventDefinitions[outputEvent.Name];
                 var payloadType = eventDefinition.PayloadType;
@@ -153,6 +160,77 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             //       check if there is any pending events. If there is no pending events other
             //       than the current one, then we can consider workflow as completed. This 
             //       should also work for async activity.
+            if (context.WorkflowExecutionContext.Options.TrackProgress)
+            {
+                // Please note, for workflow completeness tracking, use the workflow partition key instead.
+                // The workflow partition key is in "[{partition}]{workflowName}/{workflowId}" format.
+                var partitionKey = ResourceKeyFormat.GetWorkflowPartition(context.WorkflowExecutionContext);
+                if (ouptutEvents.Count > 0)
+                {
+                    foreach (var outputEvent in ouptutEvents)
+                    {
+                        await this.orchestrator.Engine.EventPresenseStore.Upsert(
+                            partitionKey: partitionKey,
+                            key: ResourceKeyFormat.GetEventKey(
+                                partitionKey: context.WorkflowExecutionContext.PartitionKey,
+                                workflowName: context.WorkflowExecutionContext.WorkflowName,
+                                workflowId: context.WorkflowExecutionContext.WorkflowId,
+                                eventName: outputEvent.Name,
+                                eventId: outputEvent.Id),
+                            new Entity<EventReference>
+                            {
+                                Value = new EventReference
+                                {
+                                    Id = outputEvent.Id,
+                                    Name = outputEvent.Name
+                                },
+                                ExpireDateTime = context.WorkflowExecutionContext.WorkflowExpireDateTime
+                            });
+                    }
+                }
+                else
+                {
+                    // The activity returns no output event, check if the workflow has completed.
+                    // If this is the last activity to complete, then there should be only one event
+                    // which is the current trigger event present for the whole workflow.
+                    bool workflowHasCompleted = false;
+                    var activeEvents = await this.orchestrator.Engine.EventPresenseStore.List(partitionKey);
+                    if (activeEvents.Count < 1)
+                    {
+                        // This could only happen to the start activity without any input event. Otherwise, this
+                        // is a invalid state for the workflow.
+                        if (context.ActivityExecutionContext.TriggerEventReference == null)
+                        {
+                            throw new WorkflowRuntimeException(isTransient: false, "At least one active event should be found.");
+                        }
+
+                        workflowHasCompleted = true;
+                    }
+                    else if (activeEvents.Count == 1 && context.ActivityExecutionContext.TriggerEventReference != null)
+                    {
+                        // If there is only one active event and this execution has trigger event, then the active event
+                        // must match trigger event. Otherwise, it's an invalid workflow state.
+                        if (activeEvents[0].Value.Name != context.ActivityExecutionContext.TriggerEventReference.Name ||
+                            activeEvents[0].Value.Id != context.ActivityExecutionContext.TriggerEventReference.Id)
+                        {
+                            throw new WorkflowRuntimeException(isTransient: false, "The active event doesn't match.");
+                        }
+
+                        workflowHasCompleted = true;
+                    }
+
+                    if (workflowHasCompleted)
+                    {
+                        await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext);
+                    }
+                    else
+                    {
+                        // TODO: It's possible that the previous activity is being completed and the trigger event
+                        //       hasn't been deleted yet. In this case, we need to queue another control message to
+                        //       check again later.
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -344,6 +422,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
                 ActivityExecutionId = activityExecutionContext.ActivityExecutionId,
 
                 AttemptCount = activityExecutionContext.AttemptCount + 1,
+                TriggerEventReference = activityExecutionContext.TriggerEventReference,
             };
         }
 

@@ -38,6 +38,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             IEntityStore<Entity<EventModel>> eventStore,
             IEntityStore<Entity<ActivityState>> activityStateStore,
             IEntityStore<Entity<ExecutionContext>> activityExecutionContextStore,
+            IEntityStore<Entity<EventReference>> eventPresenceStore,
             IWorkflowObserver observer,
             ITimeProvider timeProvider = null)
         {
@@ -49,6 +50,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
             this.EventStore = eventStore;
             this.ActivityStateStore = activityStateStore;
             this.ActivityExecutionContextStore = activityExecutionContextStore;
+            this.EventPresenseStore = eventPresenceStore;
             this.Serializer = serializer;
             this.Observer = new SafeWorkflowObserver(observer);
             this.TimeProvider = timeProvider ?? new DefaultTimeProvider();
@@ -93,6 +95,11 @@ namespace Microsoft.EventDrivenWorkflow.Runtime
         /// Gets the activity execution context store.
         /// </summary>
         internal IEntityStore<Entity<ExecutionContext>> ActivityExecutionContextStore { get; }
+
+        /// <summary>
+        /// Gets the event presence store.
+        /// </summary>
+        internal IEntityStore<Entity<EventReference>> EventPresenseStore { get; }
 
         /// <summary>
         /// Gets the serializer.

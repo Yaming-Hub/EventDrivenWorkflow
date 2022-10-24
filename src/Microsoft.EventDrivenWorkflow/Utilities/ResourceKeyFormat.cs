@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.EventDrivenWorkflow.Runtime.Data;
 
 namespace Microsoft.EventDrivenWorkflow.Utilities
 {
@@ -80,7 +82,8 @@ namespace Microsoft.EventDrivenWorkflow.Utilities
             string partitionKey,
             string workflowName,
             Guid workflowId,
-            string eventName)
+            string eventName,
+            Guid? eventId = null)
         {
             return GetResourceKey(
                 partitionKey: partitionKey,
@@ -88,6 +91,17 @@ namespace Microsoft.EventDrivenWorkflow.Utilities
                 workflowId: workflowId,
                 resourceType: "events",
                 resourceName: eventName,
+                resourceId: eventId);
+        }
+
+        public static string GetWorkflowPartition(WorkflowExecutionContext workflowExecutionContext)
+        {
+            return GetResourceKey(
+                partitionKey: workflowExecutionContext.PartitionKey,
+                workflowName: workflowExecutionContext.WorkflowName,
+                workflowId: workflowExecutionContext.WorkflowId,
+                resourceType: null,
+                resourceName: null,
                 resourceId: null);
         }
 
@@ -104,12 +118,20 @@ namespace Microsoft.EventDrivenWorkflow.Utilities
             // [pk1]wf1/7fbc8f67-0577-430f-a1e5-f781bf299d20/activities/a1/dff2e5b4-e0bc-4053-8f06-48a722f8f7cd
             var length = string.IsNullOrEmpty(partitionKey) ? 0 : partitionKey.Length + 2;
             length += workflowName.Length;
-            length += resourceType.Length;
-            length += resourceName.Length;
             length += 39; // "/{workflowId}//"
-            if (resourceId.HasValue)
+
+            if (!string.IsNullOrEmpty(resourceType))
             {
-                length += 37; // "/{resourceId}
+                length += resourceType.Length;
+                if (!string.IsNullOrEmpty(resourceName))
+                {
+                    length += resourceName.Length;
+
+                    if (resourceId.HasValue)
+                    {
+                        length += 37; // "/{resourceId}
+                    }
+                }
             }
 
             var sb = new StringBuilder(capacity: length);
@@ -120,11 +142,18 @@ namespace Microsoft.EventDrivenWorkflow.Utilities
 
             sb.Append(workflowName);
             sb.Append("/").Append(workflowId);
-            sb.Append("/").Append(resourceType);
-            sb.Append("/").Append(resourceName);
-            if (resourceId.HasValue)
+
+            if (!string.IsNullOrEmpty(resourceType))
             {
-                sb.Append("/").Append(resourceId.Value);
+                sb.Append("/").Append(resourceType);
+                if (!string.IsNullOrEmpty(resourceName))
+                {
+                    sb.Append("/").Append(resourceName);
+                    if (resourceId.HasValue)
+                    {
+                        sb.Append("/").Append(resourceId.Value);
+                    }
+                }
             }
 
             return sb.ToString();

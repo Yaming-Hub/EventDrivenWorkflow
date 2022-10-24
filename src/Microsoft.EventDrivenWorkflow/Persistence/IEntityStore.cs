@@ -14,6 +14,8 @@ namespace Microsoft.EventDrivenWorkflow.Persistence
 
         Task<IEnumerable<TEntity>> GetMany(string partitionKey, IEnumerable<string> keys);
 
+        Task<IReadOnlyList<TEntity>> List(string partitionKey);
+
         Task Upsert(string partitionKey, string key, TEntity entity);
 
         Task Update(string partitionKey, string key, TEntity entity);

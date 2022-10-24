@@ -33,7 +33,7 @@ namespace Core.IntegrationTests
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory);
 
-            await orchestrator.StartNew();
+            await orchestrator.StartNew(options: new WorkflowExecutionOptions { TrackProgress = true });
 
             await Task.Delay(TimeSpan.FromSeconds(3));
 

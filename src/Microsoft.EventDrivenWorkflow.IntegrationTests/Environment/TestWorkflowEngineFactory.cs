@@ -19,6 +19,7 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
             var eventStore = new EntityStore<Entity<EventModel>>();
             var activityStateStore = new EntityStore<Entity<ActivityState>>();
             var activityExecutionContextStore = new EntityStore<Entity<ExecutionContext>>();
+            var eventPresenceStore = new EntityStore<Entity<EventReference>>();
             var eventQueue = new MessageQueue<Message<EventModel>>();
             var controlQueue = new MessageQueue<Message<ControlModel>>();
             var eventMessageProcessor = new MessageProcessor<Message<EventModel>>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
@@ -34,6 +35,7 @@ namespace Microsoft.EventDrivenWorkflow.IntegrationTests.Environment
                 controlMessageSender: controlQueue,
                 eventStore: eventStore,
                 activityStateStore: activityStateStore,
+                eventPresenceStore: eventPresenceStore,
                 activityExecutionContextStore: activityExecutionContextStore,
                 serializer: new TestJsonSerializer(),
                 observer: new TraceWorkflowObserver());

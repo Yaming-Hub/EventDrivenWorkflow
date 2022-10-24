@@ -38,6 +38,23 @@ namespace Microsoft.EventDrivenWorkflow.Memory.Persistence
             }
         }
 
+        public Task<IReadOnlyList<TEntity>> List(string partitionKey)
+        {
+            lock (this.lockObject)
+            {
+                List<TEntity> list = new List<TEntity>();
+                foreach(var (p, k) in dictionary.Keys)
+                {
+                    if (p == partitionKey)
+                    {
+                        list.Add(dictionary[(p, k)]);
+                    }
+                }
+
+                return Task.FromResult<IReadOnlyList<TEntity>>(list);
+            }
+        }
+
         public Task<IEnumerable<TEntity>> GetMany(string partitionKey, IEnumerable<string> keys)
         {
             lock (this.lockObject)

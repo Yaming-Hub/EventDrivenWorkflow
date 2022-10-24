@@ -10,6 +10,7 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
     using Microsoft.EventDrivenWorkflow.Messaging;
     using Microsoft.EventDrivenWorkflow.Persistence;
     using Microsoft.EventDrivenWorkflow.Runtime.Data;
+    using Microsoft.EventDrivenWorkflow.Utilities;
 
     /// <summary>
     /// This class defines a message handler which handles event messages.
@@ -95,11 +96,25 @@ namespace Microsoft.EventDrivenWorkflow.Runtime.MessageHandlers
             }
 
             // Execute the activity when all inputs are ready.
-            await this.orchestrator.ActivityExecutor.Execute(
+            var context = await this.orchestrator.ActivityExecutor.Execute(
                 message.WorkflowExecutionContext,
                 activityDefinition,
                 inputEvents,
                 triggerEvent: message.Value);
+
+            // Delete the trigger event presence after execution completes successfully.
+            if (message.WorkflowExecutionContext.Options.TrackProgress)
+            {
+                var partitionKey = ResourceKeyFormat.GetWorkflowPartition(context.WorkflowExecutionContext);
+                await this.orchestrator.Engine.EventPresenseStore.Delete(
+                    partitionKey: partitionKey,
+                    key: ResourceKeyFormat.GetEventKey(
+                        partitionKey: context.WorkflowExecutionContext.PartitionKey,
+                        workflowName: context.WorkflowExecutionContext.WorkflowName,
+                        workflowId: context.WorkflowExecutionContext.WorkflowId,
+                        eventName: message.Value.Name,
+                        eventId: message.Value.Id));
+            }
 
             return MessageHandleResult.Complete;
         }
