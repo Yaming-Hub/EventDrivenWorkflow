@@ -45,6 +45,13 @@ namespace EventDrivenWorkflow.UnitTests.Builder
             var nodesElement = xmlDocument.CreateElement("Nodes", ns);
             graphNode.AppendChild(nodesElement);
 
+            // Create start node
+            var startActivityNodeElement = xmlDocument.CreateElement("Node", ns);
+            startActivityNodeElement.SetAttribute("Id", "[START]");
+            startActivityNodeElement.SetAttribute("Label", "[START]");
+            startActivityNodeElement.SetAttribute("Category", "Activity");
+            nodesElement.AppendChild(startActivityNodeElement);
+
             foreach (var activityDefinition in workflowDefinition.ActivityDefinitions.Values)
             {
                 var activityNodeElement = xmlDocument.CreateElement("Node", ns);
@@ -54,6 +61,15 @@ namespace EventDrivenWorkflow.UnitTests.Builder
 
                 nodesElement.AppendChild(activityNodeElement);
             }
+            
+            if (workflowDefinition.CompleteEvent != null)
+            {
+                var endActivityNodeElement = xmlDocument.CreateElement("Node", ns);
+                endActivityNodeElement.SetAttribute("Id", "[END]");
+                endActivityNodeElement.SetAttribute("Label", "[END]");
+                endActivityNodeElement.SetAttribute("Category", "Activity");
+                nodesElement.AppendChild(endActivityNodeElement);
+            }
 
             var linksElement = xmlDocument.CreateElement("Links", ns);
             graphNode.AppendChild(linksElement);
@@ -61,20 +77,21 @@ namespace EventDrivenWorkflow.UnitTests.Builder
             workflowDefinition.Traverse(
                 visit: link =>
                 {
-                    if (link.Source != null)
-                    {
-                        var incomingLinkElement = xmlDocument.CreateElement("Link", ns);
-                        incomingLinkElement.SetAttribute("Source", link.Source.Name);
-                        incomingLinkElement.SetAttribute("Target", link.Target.Name);
+                    var source = link.Source?.Name ?? "[START]";
+                    var target = link.Target?.Name ?? "[END]";
 
-                        var eventLabel = link.Event.PayloadType == null
-                            ? link.Event.Name
-                            : $"{link.Event.Name} ({link.Event.PayloadType.Name})";
+                    var incomingLinkElement = xmlDocument.CreateElement("Link", ns);
+                    incomingLinkElement.SetAttribute("Source", source);
+                    incomingLinkElement.SetAttribute("Target", target);
 
-                        incomingLinkElement.SetAttribute("Label", eventLabel);
+                    var eventLabel = link.Event.PayloadType == null
+                        ? link.Event.Name
+                        : $"{link.Event.Name} ({link.Event.PayloadType.Name})";
 
-                        linksElement.AppendChild(incomingLinkElement);
-                    }
+                    incomingLinkElement.SetAttribute("Label", eventLabel);
+
+                    linksElement.AppendChild(incomingLinkElement);
+                    
                 },
                 visitDuplicate: null);
 

@@ -25,13 +25,50 @@ namespace EventDrivenWorkflow.Definitions
             Action<WorkflowLink> visitDuplicate,
             bool sort = false)
         {
+            Traverse(
+                triggerEvent: workflowDefinition.TriggerEvent,
+                eventToConsumerActivityMap: workflowDefinition.EventToConsumerActivityMap,
+                visit: visit,
+                visitDuplicate: visitDuplicate,
+                sort: sort);
+        }
+        /// <summary>
+        /// Gets the signature of the workflow.
+        /// </summary>
+        /// <param name="workflowDefinition">The workflow definition.</param>
+        /// <param name="containsLoop">Returns whether the workflow contain loop.</param>
+        /// <returns>The workflow signature.</returns>
+        internal static string GetSignature(this WorkflowDefinition workflowDefinition, out bool containsLoop)
+        {
+            return GetSignature(
+                triggerEvent: workflowDefinition.TriggerEvent,
+                eventToConsumerActivityMap: workflowDefinition.EventToConsumerActivityMap,
+                containsLoop: out containsLoop);
+        }
+
+        /// <summary>
+        /// Traverse the workflow graph.
+        /// </summary>
+        /// <param name="workflowDefinition">The workflow definition.</param>
+        /// <param name="visit">A callback method to be invoked against each workflow link.</param>
+        /// <param name="sort">Whether the to sort output event to get deterministic visiting order.</param>
+        internal static void Traverse(
+            EventDefinition triggerEvent,
+            IReadOnlyDictionary<string, ActivityDefinition> eventToConsumerActivityMap,
+            Action<WorkflowLink> visit,
+            Action<WorkflowLink> visitDuplicate,
+            bool sort = false)
+        {
             HashSet<WorkflowLink> visited = new HashSet<WorkflowLink>();
+
             var queue = new Queue<WorkflowLink>();
+
+            // Queue the inlet link.
             queue.Enqueue(new WorkflowLink
             {
                 Source = null,
-                Event = null,
-                Target = workflowDefinition.StartActivityDefinition
+                Event = triggerEvent,
+                Target = eventToConsumerActivityMap[triggerEvent.Name]
             });
 
             while (queue.Count > 0)
@@ -41,22 +78,31 @@ namespace EventDrivenWorkflow.Definitions
                 visit?.Invoke(link);
                 visited.Add(link);
 
+                // The is the outlet link.
+                if (link.Target == null)
+                {
+                    continue;
+                }
+
                 var outputEventDefinitions = sort
                     ? link.Target.OutputEventDefinitions.Values.OrderBy(a => a.Name)
                     : link.Target.OutputEventDefinitions.Values;
 
                 foreach (var outputEventDefinition in outputEventDefinitions)
                 {
-                    // An event is subscribed by one and only one activity.
-                    var outputActivity = workflowDefinition.ActivityDefinitions.Values
-                        .First(a => a.InputEventDefinitions.ContainsKey(outputEventDefinition.Name));
+                    // An event is subscribed one activity
+                    if (!eventToConsumerActivityMap.TryGetValue(outputEventDefinition.Name, out var outputActivity))
+                    {
+                        // The complete event may not be subscribed by any activity.
+                        outputActivity = null;
+                    }
 
-                    var outputLink = (new WorkflowLink
+                    var outputLink = new WorkflowLink
                     {
                         Source = link.Target,
                         Event = outputEventDefinition,
                         Target = outputActivity
-                    });
+                    };
 
                     if (!visited.Contains(outputLink))
                     {
@@ -69,6 +115,7 @@ namespace EventDrivenWorkflow.Definitions
                 }
             }
         }
+
 
         /// <summary>
         /// Gets string contains name and version of the workflow definition.
@@ -84,34 +131,40 @@ namespace EventDrivenWorkflow.Definitions
         /// <param name="workflowDefinition">The workflow definition.</param>
         /// <param name="containsLoop">Returns whether the workflow contain loop.</param>
         /// <returns>The workflow signature.</returns>
-        internal static string GetSignature(this WorkflowDefinition workflowDefinition, out bool containsLoop)
+        internal static string GetSignature(EventDefinition triggerEvent,
+            IReadOnlyDictionary<string, ActivityDefinition> eventToConsumerActivityMap,
+            out bool containsLoop)
         {
             var sb = new StringBuilder(1024);
             int duplicateLinkCount = 0;
 
-            workflowDefinition.Traverse(
+            Traverse(
+                triggerEvent,
+                eventToConsumerActivityMap,
                 visit: link =>
                 {
                     if (link.Source != null)
                     {
-                        sb.Append(link.Source.Name).Append("/");
+                        sb.Append(link.Source.Name);
+                    }
 
-                        if (link.Event.PayloadType != null)
-                        {
-                            sb.Append(link.Event.Name).Append("(").Append(link.Event.PayloadType.FullName).Append(")");
-                        }
-                        else
-                        {
-                            sb.Append(link.Event.Name);
-                        }
-
-                        sb.Append("/").Append(link.Target.Name).Append(",");
+                    sb.Append("/");
+                    if (link.Event.PayloadType != null)
+                    {
+                        sb.Append(link.Event.Name).Append("(").Append(link.Event.PayloadType.FullName).Append(")");
                     }
                     else
                     {
-                        // The initializating activity doesn't have source.
-                        sb.Append(link.Target.Name).Append(",");
+                        sb.Append(link.Event.Name);
                     }
+
+                    sb.Append("/");
+                    if (link.Target != null)
+                    {
+                        sb.Append(link.Target.Name);
+                    }
+
+                    sb.Append(",");
                 },
                 visitDuplicate: link => { duplicateLinkCount++; });
 

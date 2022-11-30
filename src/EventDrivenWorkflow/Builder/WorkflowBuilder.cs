@@ -7,6 +7,7 @@
 namespace EventDrivenWorkflow.Builder
 {
     using System;
+    using System.Linq;
     using EventDrivenWorkflow.Definitions;
     using EventDrivenWorkflow.Utilities;
 
@@ -25,8 +26,7 @@ namespace EventDrivenWorkflow.Builder
         /// Initializes a new instance of the <see cref="WorkflowBuilder"/> class.
         /// </summary>
         /// <param name="name">Name of the workflow.</param>
-        /// <param name="workflowType">The workflow type.</param>
-        public WorkflowBuilder(string name, WorkflowType workflowType)
+        public WorkflowBuilder(string name)
         {
             if (StringConstraint.Name.IsValid(name, out string reason))
             {
@@ -34,7 +34,6 @@ namespace EventDrivenWorkflow.Builder
             }
 
             this.Name = name;
-            this.Type = workflowType;
             this.eventBuilders = new List<EventBuilder>();
             this.activityBuilders = new List<ActivityBuilder>();
             this.childWorkflowBuilders = new List<WorkflowBuilder>();
@@ -42,8 +41,6 @@ namespace EventDrivenWorkflow.Builder
         }
 
         internal string Name { get; }
-
-        internal WorkflowType Type { get; }
 
         internal IReadOnlyList<EventBuilder> EventBuilders => this.eventBuilders;
 
@@ -80,11 +77,12 @@ namespace EventDrivenWorkflow.Builder
             return activityBuilder;
         }
 
+        // TODO: Remove.
         public WorkflowBuilder AddWorkflow(string name)
         {
             this.EnsureActivityNameIsUnique(name);
 
-            var childWorkflowBuilder = new WorkflowBuilder(name, this.Type);
+            var childWorkflowBuilder = new WorkflowBuilder(name);
             this.childWorkflowBuilders.Add(childWorkflowBuilder);
             return childWorkflowBuilder;
         }
@@ -97,6 +95,9 @@ namespace EventDrivenWorkflow.Builder
 
         public WorkflowDefinition Build()
         {
+            // TODO: Workflow must have a trigger event.
+            // TODO: Workflow may have an optional complete event.
+
             var workflowDefinition = this.Build(null, new Dictionary<string, EventDefinition>());
 
             if (workflowDefinition.ActivityDefinitions.Count == 0)
@@ -104,29 +105,87 @@ namespace EventDrivenWorkflow.Builder
                 throw new InvalidWorkflowException($"There is no activity defined in workflow {this.Name}.");
             }
 
-            // Check there is no more than one activity subscribe to the same event.
-            var eventToSubscribedActivityMap = new Dictionary<string, ActivityDefinition>(workflowDefinition.EventDefinitions.Count);
+            // Build event to consumer activity and event to producer activities map.
+            var eventToConsumerActivityMap = new Dictionary<string, ActivityDefinition>(workflowDefinition.EventDefinitions.Count);
+            var eventToProducerActivitiesMap = new Dictionary<string, List<ActivityDefinition>>(workflowDefinition.EventDefinitions.Count);
             foreach (var activityDefinition in workflowDefinition.ActivityDefinitions.Values)
             {
+                if (activityDefinition.InputEventDefinitions.Count == 0)
+                {
+                    throw new InvalidWorkflowException($"There is no input event defined for activity {activityDefinition.Name}.");
+                }
+
                 foreach (var inputEventName in activityDefinition.InputEventDefinitions.Keys)
                 {
-                    if (eventToSubscribedActivityMap.ContainsKey(inputEventName))
+                    if (!workflowDefinition.EventDefinitions.ContainsKey(inputEventName))
+                    {
+                        throw new InvalidWorkflowException($"Input event {inputEventName} of activity {activityDefinition.Name} is not registered.");
+                    }
+
+                    // Check there is no more than one activity subscribe to the same event.
+                    if (eventToConsumerActivityMap.ContainsKey(inputEventName))
                     {
                         throw new InvalidWorkflowException(
                             $"The event {inputEventName} is subscribed by both " +
-                            $"{eventToSubscribedActivityMap[inputEventName].Name} activity " +
+                            $"{eventToConsumerActivityMap[inputEventName].Name} activity " +
                             $" and {activityDefinition.Name} activity.");
                     }
 
-                    eventToSubscribedActivityMap.Add(inputEventName, activityDefinition);
+                    eventToConsumerActivityMap.Add(inputEventName, activityDefinition);
+                }
+
+                foreach (var outputEventName in activityDefinition.OutputEventDefinitions.Keys)
+                {
+                    if (!workflowDefinition.EventDefinitions.ContainsKey(outputEventName))
+                    {
+                        throw new InvalidWorkflowException($"Output event {outputEventName} of activity {activityDefinition.Name} is not registered.");
+                    }
+
+                    if (!eventToProducerActivitiesMap.TryGetValue(outputEventName, out var producerActivities))
+                    {
+                        producerActivities = new List<ActivityDefinition>();
+                        eventToProducerActivitiesMap.Add(outputEventName, producerActivities);
+                    }
+
+                    producerActivities.Add(activityDefinition);
                 }
             }
 
-            // Check every event should be subscribed by one activity.
-            if (eventToSubscribedActivityMap.Count < workflowDefinition.EventDefinitions.Count)
+            // Find trigger event. Trigger event is cannot be produced by any activity.
+            var triggerEvents = workflowDefinition.EventDefinitions.Values
+                .Where(e => !eventToProducerActivitiesMap.ContainsKey(e.Name))
+                .ToList();
+
+            if (triggerEvents.Count == 0)
             {
-                var missingEvents = workflowDefinition.EventDefinitions.Keys.Except(eventToSubscribedActivityMap.Keys).ToList();
-                throw new InvalidWorkflowException($"There are events not be subscribed: {string.Join(",", missingEvents)}");
+                throw new InvalidWorkflowException("There is no trigger event found in the workflow definition.");
+            }
+
+            if (triggerEvents.Count > 1)
+            {
+                throw new InvalidWorkflowException("There are more than one trigger events found in the workflow definition. "
+                    + $"Trigger events are {string.Join(",", triggerEvents)}.");
+            }
+
+            var triggerEvent = triggerEvents[0];
+
+            // Find the optional complete event.
+            EventDefinition completeEvent = null;
+            if (eventToConsumerActivityMap.Count < workflowDefinition.EventDefinitions.Count)
+            {
+                var eventsWithoutSubscribedActivity = workflowDefinition.EventDefinitions.Values
+                    .Where(e => !eventToConsumerActivityMap.ContainsKey(e.Name))
+                    .ToList();
+
+                if (eventsWithoutSubscribedActivity.Count > 1)
+                {
+                    var missingEvents = eventsWithoutSubscribedActivity.Select(e => e.Name).ToList();
+                    throw new InvalidWorkflowException($"There are more than one events not be subscribed: {string.Join(",", missingEvents)}");
+                }
+                else if (eventsWithoutSubscribedActivity.Count == 1)
+                {
+                    completeEvent = eventsWithoutSubscribedActivity[0];
+                }
             }
 
             // Find the start activity.
@@ -142,51 +201,20 @@ namespace EventDrivenWorkflow.Builder
                     $"More than one activity without input events: {string.Join(",", candidateStartActivities.Select(e => e.Name))}.");
             }
 
-            var candidateStartEvents = workflowDefinition.EventDefinitions.Values
-                .Where(e => !workflowDefinition.ActivityDefinitions.Values.Any(a => a.OutputEventDefinitions.ContainsKey(e.Name)))
-                .ToList();
-
-            if (candidateStartEvents.Count > 1)
-            {
-                throw new InvalidWorkflowException(
-                    $"More than one event without publisher: {string.Join(",", candidateStartEvents.Select(e => e.Name))}.");
-            }
-
-            if (candidateStartActivities.Count == 1 && candidateStartEvents.Count == 1)
-            {
-                throw new InvalidWorkflowException(
-                    $"Both start activity {candidateStartActivities[0].Name} and start event {candidateStartEvents[0].Name} are defined.");
-            }
-
-            if (candidateStartActivities.Count == 0 && candidateStartEvents.Count == 0)
-            {
-                throw new InvalidWorkflowException("Neither start activity nor start event is found in the workflow.");
-            }
-
-            workflowDefinition.StartActivityDefinition = candidateStartActivities.Count == 1
-                ? candidateStartActivities[0]
-                : workflowDefinition.ActivityDefinitions.Values.First(a => a.InputEventDefinitions.ContainsKey(candidateStartEvents[0].Name));
-
             // Calculate workflow version.
-            var signature = workflowDefinition.GetSignature(out bool containsLoop);
+            var signature = WorkflowDefinitionExtensions.GetSignature(triggerEvent, eventToConsumerActivityMap, out bool containsLoop);
             var version = MurmurHash3.HashToString(signature);
-
-            // Make sure the static workflow cannot have loop
-            if (this.Type == WorkflowType.Static && containsLoop)
-            {
-                throw new InvalidWorkflowException("Static workflow must not contain loop.");
-            }
 
             return new WorkflowDefinition
             {
                 Name = workflowDefinition.Name,
                 Version = version,
-                Type = this.Type,
                 EventDefinitions = workflowDefinition.EventDefinitions,
                 ActivityDefinitions = workflowDefinition.ActivityDefinitions,
-                StartActivityDefinition = workflowDefinition.StartActivityDefinition,
+                TriggerEvent = triggerEvents[0],
+                CompleteEvent = completeEvent,
                 MaxExecuteDuration = this.maxExecuteDuration,
-                EventToSubscribedActivityMap = eventToSubscribedActivityMap,
+                EventToConsumerActivityMap = eventToConsumerActivityMap,
             };
         }
 

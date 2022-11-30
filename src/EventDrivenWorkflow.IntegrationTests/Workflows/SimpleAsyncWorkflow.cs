@@ -17,9 +17,10 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
     {
         public static (WorkflowDefinition, IExecutableFactory) Build(TaskCompletionSource<QualifiedExecutionId> taskCompletionSource)
         {
-            var builder = new WorkflowBuilder("SimpleAsyncWorkflow", WorkflowType.Static);
+            var builder = new WorkflowBuilder("SimpleAsyncWorkflow");
+            builder.RegisterEvent("e0");
             builder.RegisterEvent<string>("result");
-            builder.AddActivity("AsyncActivity", isAsync: true).Publish("result");
+            builder.AddActivity("AsyncActivity", isAsync: true).Subscribe("e0").Publish("result");
             builder.AddActivity("LogResult").Subscribe("result");
             return (builder.Build(), new ExecutableFactory(taskCompletionSource));
         }

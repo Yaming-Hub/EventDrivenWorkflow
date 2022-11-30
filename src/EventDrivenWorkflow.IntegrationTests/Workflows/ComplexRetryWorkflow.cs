@@ -17,10 +17,11 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
     {
         public static (WorkflowDefinition, IExecutableFactory) Build(int attempCount)
         {
-            var builder = new WorkflowBuilder("RetryWorkflow", WorkflowType.Static);
+            var builder = new WorkflowBuilder("RetryWorkflow");
+            builder.RegisterEvent("e0");
             builder.RegisterEvent<string>("message");
             builder.RegisterEvent<string>("result");
-            builder.AddActivity("SendMessage").Publish("message");
+            builder.AddActivity("SendMessage").Subscribe("e0").Publish("message");
             builder.AddActivity("FailActivity").Subscribe("message").Publish("result").Retry(maxRetryCount: 4, delayDuration: TimeSpan.Zero);
             builder.AddActivity("LogResult").Subscribe("result");
             return (builder.Build(), new ExecutableFactory(attempCount));

@@ -15,7 +15,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
     {
         public static (WorkflowDefinition, IExecutableFactory) Build()
         {
-            var builder = new WorkflowBuilder("CountDown", WorkflowType.Dynamic);
+            var builder = new WorkflowBuilder("CountDown");
             builder.RegisterEvent<int>("countParameter");
             builder.RegisterEvent<int>("countVarible");
             builder.AddActivity("ForwardActivity").Subscribe("countParameter").Publish("countVarible");

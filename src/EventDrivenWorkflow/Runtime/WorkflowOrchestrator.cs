@@ -130,57 +130,32 @@ namespace EventDrivenWorkflow.Runtime
                 Options = options,
             };
 
-            var startActivityDefinition = this.WorkflowDefinition.StartActivityDefinition;
-
-            if (startActivityDefinition.InputEventDefinitions.Count == 0)
+            var triggerEvent = this.WorkflowDefinition.TriggerEvent;
+            if (triggerEvent.PayloadType != payloadType)
             {
-                if (payloadType != null || payload != null)
-                {
-                    throw new InvalidOperationException("The workflow cannot start with payload.");
-                }
-
-                var executeStartActivityMessage = new Message<ControlModel>
-                {
-                    Value = new ControlModel
-                    {
-                        Operation = ControlOperation.ExecuteActivity,
-                        TargetActivityName = startActivityDefinition.Name,
-                    },
-                    WorkflowExecutionContext = workflowExecutionContext,
-                };
-
-                // Queue a control message to trigger the start activity.
-                await this.Engine.ControlMessageSender.Send(executeStartActivityMessage);
+                throw new InvalidOperationException(
+                    $"The payload type {payloadType} doesn't match start event payload type {triggerEvent.PayloadType}");
             }
-            else
+
+            var startEventMessage = new Message<EventModel>
             {
-                var startEventDefinition = startActivityDefinition.InputEventDefinitions.Values.First();
-                if (startEventDefinition.PayloadType != payloadType)
+                Value = new EventModel
                 {
-                    throw new InvalidOperationException(
-                        $"The payload type {payloadType} doesn't match start event payload type {startEventDefinition.PayloadType}");
-                }
-
-                var startEventMessage = new Message<EventModel>
-                {
-                    Value = new EventModel
+                    Id = Guid.NewGuid(),
+                    Name = triggerEvent.Name,
+                    SourceEngineId = this.Engine.Id,
+                    DelayDuration = TimeSpan.Zero,
+                    Payload = payloadType == null ? null : new Payload
                     {
-                        Id = Guid.NewGuid(),
-                        Name = startEventDefinition.Name,
-                        SourceEngineId = this.Engine.Id,
-                        DelayDuration = TimeSpan.Zero,
-                        Payload = payloadType == null ? null : new Payload
-                        {
-                            TypeName = payloadType.FullName,
-                            Body = payload == null ? null : this.Engine.Serializer.Serialize(payload),
-                        }
-                    },
-                    WorkflowExecutionContext = workflowExecutionContext,
-                };
+                        TypeName = payloadType.FullName,
+                        Body = payload == null ? null : this.Engine.Serializer.Serialize(payload),
+                    }
+                },
+                WorkflowExecutionContext = workflowExecutionContext,
+            };
 
-                // Queue the start event message to trigger the start activity.
-                await this.Engine.EventMessageSender.Send(startEventMessage);
-            }
+            // Queue the start event message to trigger the start activity.
+            await this.Engine.EventMessageSender.Send(startEventMessage);
 
             await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
 

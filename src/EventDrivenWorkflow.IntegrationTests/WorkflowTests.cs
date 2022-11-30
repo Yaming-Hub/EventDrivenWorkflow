@@ -21,10 +21,11 @@ namespace Core.IntegrationTests
         [TestMethod]
         public async Task TestSimpleWorkflow()
         {
-            var builder = new WorkflowBuilder("Test", WorkflowType.Static);
+            var builder = new WorkflowBuilder("Test");
+            builder.RegisterEvent("e0");
             builder.RegisterEvent("e1");
             builder.RegisterEvent("e2");
-            builder.AddActivity("a1").Publish("e1");
+            builder.AddActivity("a1").Subscribe("e0").Publish("e1");
             builder.AddActivity("a2").Subscribe("e1").Publish("e2");
             builder.AddActivity("a3").Subscribe("e2");
 
@@ -44,7 +45,6 @@ namespace Core.IntegrationTests
         public async Task TestCountDownWorkflow()
         {
             var (wd, af) = CountDownWorkflow.Build();
-            ;
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var orchestrator = new WorkflowOrchestrator(engine, wd, af);
 

@@ -29,11 +29,6 @@ namespace EventDrivenWorkflow.Definitions
         public string Version { get; init; }
 
         /// <summary>
-        /// Gets type of the workflow.
-        /// </summary>
-        public WorkflowType Type { get; init; }
-
-        /// <summary>
         /// Gets a list of events defined in the workflow.
         /// </summary>
         public IReadOnlyDictionary<string, EventDefinition> EventDefinitions { get; init; }
@@ -49,13 +44,18 @@ namespace EventDrivenWorkflow.Definitions
         public TimeSpan MaxExecuteDuration { get; init; }
 
         /// <summary>
-        /// Gets the initializing activity definition of the workflow.
+        /// Gets trigger event of the workflow. A workflow must have one trigger event.
         /// </summary>
-        public ActivityDefinition StartActivityDefinition { get; internal set; }
+        public EventDefinition TriggerEvent { get; init; }
 
         /// <summary>
-        /// Gets a map from event to subscribed activity.
+        /// Gets the complete event. A workflow may have zero or one complete event.
         /// </summary>
-        public IReadOnlyDictionary<string, ActivityDefinition> EventToSubscribedActivityMap { get; init; }
+        public EventDefinition CompleteEvent { get; init; }
+
+        /// <summary>
+        /// Gets a map from event to consumer activity. One event can only be subscribed by one activity.
+        /// </summary>
+        public IReadOnlyDictionary<string, ActivityDefinition> EventToConsumerActivityMap { get; init; }
     }
 }

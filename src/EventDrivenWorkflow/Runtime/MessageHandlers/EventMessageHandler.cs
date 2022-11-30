@@ -68,7 +68,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                     $"workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
             }
 
-            if (eventDefinition.PayloadType?.FullName != message.Value.Payload.TypeName)
+            if (eventDefinition.PayloadType?.FullName != message.Value.Payload?.TypeName)
             {
                 // The incoming event payload type doesn't match the event definition, the workflow logic may have been changed.
                 throw new WorkflowRuntimeException(
@@ -79,7 +79,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
             }
 
             // Find the activity that subscribe to the current event.
-            var activityDefinition = workflowDefinition.EventToSubscribedActivityMap[message.Value.Name];
+            var activityDefinition = workflowDefinition.EventToConsumerActivityMap[message.Value.Name];
 
             // Try to load all input event for the activity.
             var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count);
