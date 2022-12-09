@@ -47,12 +47,12 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.WorkflowCompleted(context));
         }
 
-        public Task HandleEventMessageFailed(Exception context, Message<EventModel> eventMessage)
+        public Task HandleEventMessageFailed(Exception context, EventMessage eventMessage)
         {
             return IgnoreException(() => observer.HandleEventMessageFailed(context, eventMessage));
         }
 
-        public Task HandleControlMessageFailed(Exception context, Message<ControlModel> controlMessage)
+        public Task HandleControlMessageFailed(Exception context, ControlMessage controlMessage)
         {
             return IgnoreException(() => observer.HandleControlMessageFailed(context, controlMessage));
         }

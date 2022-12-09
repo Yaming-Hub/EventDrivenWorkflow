@@ -13,7 +13,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
     /// This message handler handles control messages. It dispatches the control operation to the
     /// corresponding control operation handers.
     /// </summary>
-    internal sealed class ControlMessageHandler : IMessageHandler<Message<ControlModel>>
+    internal sealed class ControlMessageHandler : IMessageHandler<ControlMessage>
     {
         private readonly WorkflowOrchestrator orchestrator;
         private readonly IReadOnlyDictionary<ControlOperation, IControlOperationHandler> operationHandlers;
@@ -36,15 +36,15 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
         }
 
         /// <inheritdoc/>
-        public async Task<MessageHandleResult> Handle(Message<ControlModel> message)
+        public async Task<MessageHandleResult> Handle(ControlMessage message)
         {
-            if (message.WorkflowExecutionContext.WorkflowName != this.orchestrator.WorkflowDefinition.Name)
+            if (message.WorkflowName != this.orchestrator.WorkflowDefinition.Name)
             {
                 return MessageHandleResult.Continue;
             }
 
             // Dispatch the message to pre-registered operation handler
-            if (!this.operationHandlers.TryGetValue(message.Value.Operation, out var operationHandler))
+            if (!this.operationHandlers.TryGetValue(message.Operation, out var operationHandler))
             {
                 // TODO: Report failure as we don't know how to hander this operation.
                 return MessageHandleResult.Complete;
@@ -52,7 +52,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
 
             try
             {
-                return await operationHandler.Handle(this.orchestrator, message);
+                return await operationHandler.Handle(this.orchestrator, message.ControlModel);
             }
             catch (WorkflowRuntimeException wre)
             {

@@ -13,9 +13,11 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
 
     internal sealed class ExecuteActivityOperationHandler : IControlOperationHandler
     {
-        public async Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, Message<ControlModel> message)
+        public async Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, ControlModel controlModel)
         {
-            if (string.IsNullOrEmpty(message.Value.TargetActivityName))
+            var model = (ExecuteActivityControlModel)controlModel;
+
+            if (string.IsNullOrEmpty(model.TargetActivityName))
             {
                 // This is invalid message.
                 // TODO: Report unknown event error.
@@ -23,37 +25,37 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
             }
 
             if (!orchestrator.WorkflowDefinition.ActivityDefinitions.TryGetValue(
-                message.Value.TargetActivityName, out var activityDefinition))
+                model.TargetActivityName, out var activityDefinition))
             {
                 // The target activity is not defined. This may happen if the workflow is changed.
                 // TODO: Report unknown event error.
                 return MessageHandleResult.Complete;
             }
 
-            if (message.Value.ActivityExecutionContext == null)
+            if (model.ExecutionContext.ActivityExecutionContext == null)
             {
                 // New execution.
                 await orchestrator.ActivityExecutor.Execute(
-                    message.WorkflowExecutionContext,
+                    model.ExecutionContext.WorkflowExecutionContext,
                     activityDefinition,
                     inputEvents: new Dictionary<string, Event>(),
-                    triggerEvent: message.Value.Event);
+                    triggerEvent: model.Event);
             }
             else
             {
                 // Retry.
                 var context = new ExecutionContext
                 {
-                    WorkflowExecutionContext = message.WorkflowExecutionContext,
-                    ActivityExecutionContext = message.Value.ActivityExecutionContext
+                    WorkflowExecutionContext = model.ExecutionContext.WorkflowExecutionContext,
+                    ActivityExecutionContext = model.ExecutionContext.ActivityExecutionContext
                 };
 
                 // Try to load all input event for the activity.
                 var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count);
                 var allInputEventsAvailable = await orchestrator.InputEventLoader.TryLoadInputEvents(
                     activityDefinition: activityDefinition,
-                    workflowExecutionContext: message.WorkflowExecutionContext,
-                    triggerEventModel: message.Value.Event,
+                    workflowExecutionContext: model.ExecutionContext.WorkflowExecutionContext,
+                    triggerEventModel: model.Event,
                     inputEvents: inputEvents);
 
                 if (!allInputEventsAvailable)
@@ -66,7 +68,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                     context,
                     activityDefinition,
                     inputEvents: inputEvents,
-                    triggerEventModel: message.Value.Event);
+                    triggerEventModel: model.Event);
             }
 
             return MessageHandleResult.Complete;

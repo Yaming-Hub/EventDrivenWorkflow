@@ -129,9 +129,9 @@ namespace EventDrivenWorkflow.Runtime
                 var payloadType = eventDefinition.PayloadType;
                 object payload = outputEvent.GetPayload(payloadType);
 
-                var message = new Message<EventModel>
+                var message = new EventMessage
                 {
-                    Value = new EventModel
+                    EventModel = new EventModel
                     {
                         Id = outputEvent.Id,
                         SourceEngineId = outputEvent.SourceEngineId,
@@ -155,82 +155,82 @@ namespace EventDrivenWorkflow.Runtime
                 await this.orchestrator.Engine.Observer.EventPublished(context, outputEvent);
             }
 
-            // TODO: If the workflow is being tracked and there is no output event published
-            //       by the current activity. This is one terminating operation, and we should
-            //       check if there is any pending events. If there is no pending events other
-            //       than the current one, then we can consider workflow as completed. This 
-            //       should also work for async activity.
-            if (context.WorkflowExecutionContext.Options.TrackProgress)
-            {
-                // Please note, for workflow completeness tracking, use the workflow partition key instead.
-                // The workflow partition key is in "[{partition}]{workflowName}/{workflowId}" format.
-                var partitionKey = ResourceKeyFormat.GetWorkflowPartition(context.WorkflowExecutionContext);
-                if (ouptutEvents.Count > 0)
-                {
-                    foreach (var outputEvent in ouptutEvents)
-                    {
-                        await this.orchestrator.Engine.EventPresenseStore.Upsert(
-                            partitionKey: partitionKey,
-                            key: ResourceKeyFormat.GetEventKey(
-                                partitionKey: context.WorkflowExecutionContext.PartitionKey,
-                                workflowName: context.WorkflowExecutionContext.WorkflowName,
-                                workflowId: context.WorkflowExecutionContext.WorkflowId,
-                                eventName: outputEvent.Name,
-                                eventId: outputEvent.Id),
-                            new Entity<EventReference>
-                            {
-                                Value = new EventReference
-                                {
-                                    Id = outputEvent.Id,
-                                    Name = outputEvent.Name
-                                },
-                                ExpireDateTime = context.WorkflowExecutionContext.WorkflowExpireDateTime
-                            });
-                    }
-                }
-                else
-                {
-                    // The activity returns no output event, check if the workflow has completed.
-                    // If this is the last activity to complete, then there should be only one event
-                    // which is the current trigger event present for the whole workflow.
-                    bool workflowHasCompleted = false;
-                    var activeEvents = await this.orchestrator.Engine.EventPresenseStore.List(partitionKey);
-                    if (activeEvents.Count < 1)
-                    {
-                        // This could only happen to the start activity without any input event. Otherwise, this
-                        // is a invalid state for the workflow.
-                        if (context.ActivityExecutionContext.TriggerEventReference == null)
-                        {
-                            throw new WorkflowRuntimeException(isTransient: false, "At least one active event should be found.");
-                        }
+            //// TODO: If the workflow is being tracked and there is no output event published
+            ////       by the current activity. This is one terminating operation, and we should
+            ////       check if there is any pending events. If there is no pending events other
+            ////       than the current one, then we can consider workflow as completed. This 
+            ////       should also work for async activity.
+            //if (context.WorkflowExecutionContext.Options.TrackProgress)
+            //{
+            //    // Please note, for workflow completeness tracking, use the workflow partition key instead.
+            //    // The workflow partition key is in "[{partition}]{workflowName}/{workflowId}" format.
+            //    var partitionKey = ResourceKeyFormat.GetWorkflowPartition(context.WorkflowExecutionContext);
+            //    if (ouptutEvents.Count > 0)
+            //    {
+            //        foreach (var outputEvent in ouptutEvents)
+            //        {
+            //            await this.orchestrator.Engine.EventPresenseStore.Upsert(
+            //                partitionKey: partitionKey,
+            //                key: ResourceKeyFormat.GetEventKey(
+            //                    partitionKey: context.WorkflowExecutionContext.PartitionKey,
+            //                    workflowName: context.WorkflowExecutionContext.WorkflowName,
+            //                    workflowId: context.WorkflowExecutionContext.WorkflowId,
+            //                    eventName: outputEvent.Name,
+            //                    eventId: outputEvent.Id),
+            //                new Entity<EventReference>
+            //                {
+            //                    Value = new EventReference
+            //                    {
+            //                        Id = outputEvent.Id,
+            //                        Name = outputEvent.Name
+            //                    },
+            //                    ExpireDateTime = context.WorkflowExecutionContext.WorkflowExpireDateTime
+            //                });
+            //        }
+            //    }
+            //    else
+            //    {
+            //        // The activity returns no output event, check if the workflow has completed.
+            //        // If this is the last activity to complete, then there should be only one event
+            //        // which is the current trigger event present for the whole workflow.
+            //        bool workflowHasCompleted = false;
+            //        var activeEvents = await this.orchestrator.Engine.EventPresenseStore.List(partitionKey);
+            //        if (activeEvents.Count < 1)
+            //        {
+            //            // This could only happen to the start activity without any input event. Otherwise, this
+            //            // is a invalid state for the workflow.
+            //            if (context.ActivityExecutionContext.TriggerEventReference == null)
+            //            {
+            //                throw new WorkflowRuntimeException(isTransient: false, "At least one active event should be found.");
+            //            }
 
-                        workflowHasCompleted = true;
-                    }
-                    else if (activeEvents.Count == 1 && context.ActivityExecutionContext.TriggerEventReference != null)
-                    {
-                        // If there is only one active event and this execution has trigger event, then the active event
-                        // must match trigger event. Otherwise, it's an invalid workflow state.
-                        if (activeEvents[0].Value.Name != context.ActivityExecutionContext.TriggerEventReference.Name ||
-                            activeEvents[0].Value.Id != context.ActivityExecutionContext.TriggerEventReference.Id)
-                        {
-                            throw new WorkflowRuntimeException(isTransient: false, "The active event doesn't match.");
-                        }
+            //            workflowHasCompleted = true;
+            //        }
+            //        else if (activeEvents.Count == 1 && context.ActivityExecutionContext.TriggerEventReference != null)
+            //        {
+            //            // If there is only one active event and this execution has trigger event, then the active event
+            //            // must match trigger event. Otherwise, it's an invalid workflow state.
+            //            if (activeEvents[0].Value.Name != context.ActivityExecutionContext.TriggerEventReference.Name ||
+            //                activeEvents[0].Value.Id != context.ActivityExecutionContext.TriggerEventReference.Id)
+            //            {
+            //                throw new WorkflowRuntimeException(isTransient: false, "The active event doesn't match.");
+            //            }
 
-                        workflowHasCompleted = true;
-                    }
+            //            workflowHasCompleted = true;
+            //        }
 
-                    if (workflowHasCompleted)
-                    {
-                        await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext);
-                    }
-                    else
-                    {
-                        // TODO: It's possible that the previous activity is being completed and the trigger event
-                        //       hasn't been deleted yet. In this case, we need to queue another control message to
-                        //       check again later.
-                    }
-                }
-            }
+            //        if (workflowHasCompleted)
+            //        {
+            //            await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext);
+            //        }
+            //        else
+            //        {
+            //            // TODO: It's possible that the previous activity is being completed and the trigger event
+            //            //       hasn't been deleted yet. In this case, we need to queue another control message to
+            //            //       check again later.
+            //        }
+            //    }
+            //}
         }
 
         /// <summary>
@@ -311,16 +311,20 @@ namespace EventDrivenWorkflow.Runtime
             {
                 if (context.ActivityExecutionContext.AttemptCount < activityDefinition.RetryPolicy.MaxRetryCount)
                 {
-                    var controlMessage = new Message<ControlModel>
+                    var controlMessage = new ControlMessage
                     {
-                        Value = new ControlModel
+                        ControlModel = new ExecuteActivityControlModel
                         {
                             Event = triggerEvent,
                             Operation = ControlOperation.ExecuteActivity,
                             TargetActivityName = activityDefinition.Name,
-                            ActivityExecutionContext = IncrementAttemptCount(context.ActivityExecutionContext),
+                            ExecutionContext = new ExecutionContext
+                            {
+                                WorkflowExecutionContext = context.WorkflowExecutionContext,
+                                ActivityExecutionContext = IncrementAttemptCount(context.ActivityExecutionContext),
+                            }                            
                         },
-                        WorkflowExecutionContext = context.WorkflowExecutionContext,
+                        
                     };
 
                     await this.orchestrator.Engine.ControlMessageSender.Send(controlMessage, activityDefinition.RetryPolicy.DelayDuration);

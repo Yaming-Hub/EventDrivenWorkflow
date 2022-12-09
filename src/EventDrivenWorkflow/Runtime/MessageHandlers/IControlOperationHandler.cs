@@ -20,6 +20,6 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
         /// <param name="orchestrator">The workflow orchestrator.</param>
         /// <param name="message">The control message.</param>
         /// <returns>The handle result.</returns>
-        Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, Message<ControlModel> message);
+        Task<MessageHandleResult> Handle(WorkflowOrchestrator orchestrator, ControlModel controlModel);
     }
 }

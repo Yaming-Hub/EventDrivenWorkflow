@@ -42,12 +42,12 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"WorkflowCompleted  Workflow={context.GetPath()}");
         }
 
-        public Task HandleEventMessageFailed(Exception exception, Message<EventModel> eventMessage)
+        public Task HandleEventMessageFailed(Exception exception, EventMessage eventMessage)
         {
             return Log($"HandleEventMessageFailed {exception}");
         }
 
-        public Task HandleControlMessageFailed(Exception exception, Message<ControlModel> eventMessage)
+        public Task HandleControlMessageFailed(Exception exception, ControlMessage controlMessage)
         {
             return Log($"HandleControlMessageFailed {exception}");
         }

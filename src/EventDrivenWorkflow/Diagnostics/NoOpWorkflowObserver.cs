@@ -39,12 +39,12 @@ namespace EventDrivenWorkflow.Diagnostics
             return Task.CompletedTask;
         }
 
-        public Task HandleEventMessageFailed(Exception context, Message<EventModel> eventMessage)
+        public Task HandleEventMessageFailed(Exception context, EventMessage eventMessage)
         {
             return Task.CompletedTask;
         }
 
-        public Task HandleControlMessageFailed(Exception context, Message<ControlModel> controlMessage)
+        public Task HandleControlMessageFailed(Exception context, ControlMessage controlMessage)
         {
             return Task.CompletedTask;
         }

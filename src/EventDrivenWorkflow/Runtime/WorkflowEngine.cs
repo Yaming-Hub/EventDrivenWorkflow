@@ -30,10 +30,10 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="timeProvider">The time provider.</param>
         public WorkflowEngine(
             string id,
-            IMessageProcessor<Message<EventModel>> eventMessageProcessor,
-            IMessageProcessor<Message<ControlModel>> controlMessageProcessor,
-            IMessageSender<Message<EventModel>> eventMessageSender,
-            IMessageSender<Message<ControlModel>> controlMessageSender,
+            IMessageProcessor<EventMessage> eventMessageProcessor,
+            IMessageProcessor<ControlMessage> controlMessageProcessor,
+            IMessageSender<EventMessage> eventMessageSender,
+            IMessageSender<ControlMessage> controlMessageSender,
             ISerializer serializer,
             IEntityStore<Entity<EventModel>> eventStore,
             IEntityStore<Entity<ActivityState>> activityStateStore,
@@ -64,22 +64,22 @@ namespace EventDrivenWorkflow.Runtime
         /// <summary>
         /// Gets the event message processor.
         /// </summary>
-        internal IMessageProcessor<Message<EventModel>> EventMessageProcessor { get; }
+        internal IMessageProcessor<EventMessage> EventMessageProcessor { get; }
 
         /// <summary>
         /// Gets the control message processor.
         /// </summary>
-        internal IMessageProcessor<Message<ControlModel>> ControlMessageProcessor { get; }
+        internal IMessageProcessor<ControlMessage> ControlMessageProcessor { get; }
 
         /// <summary>
         /// Gets event message sender.
         /// </summary>
-        internal IMessageSender<Message<EventModel>> EventMessageSender { get; }
+        internal IMessageSender<EventMessage> EventMessageSender { get; }
 
         /// <summary>
         /// Gets control message sender.
         /// </summary>
-        internal IMessageSender<Message<ControlModel>> ControlMessageSender { get; }
+        internal IMessageSender<ControlMessage> ControlMessageSender { get; }
 
         /// <summary>
         /// Gets the event store.

@@ -10,16 +10,16 @@ namespace EventDrivenWorkflow.Runtime.Data
     /// This class defines a message wrapper.
     /// </summary>
     /// <typeparam name="T">Type of the message body.</typeparam>
-    public sealed class Message<T>
+    public sealed class ControlMessage : WorkflowMessage
     {
         /// <summary>
         /// Gets the message body value.
         /// </summary>
-        public T Value { get; init; }
+        public ControlModel ControlModel { get; init; }
 
         /// <summary>
-        /// Gets the workflow execution context of the message.
+        /// Gets the control operation.
         /// </summary>
-        public WorkflowExecutionContext WorkflowExecutionContext { get; init; }
+        public ControlOperation Operation { get; init; }
     }
 }
