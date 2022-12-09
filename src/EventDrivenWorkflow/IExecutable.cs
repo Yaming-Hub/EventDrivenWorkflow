@@ -22,7 +22,7 @@ namespace EventDrivenWorkflow
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task represents the async operation.</returns>
         Task Execute(
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             IEventRetriever eventRetriever,
             IEventPublisher eventPublisher,
             CancellationToken cancellationToken);

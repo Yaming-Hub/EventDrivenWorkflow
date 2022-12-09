@@ -14,11 +14,11 @@ namespace EventDrivenWorkflow.Diagnostics
 
         Task EventAccepted(WorkflowExecutionContext context, Event @event);
 
-        Task ActivityStarting(ExecutionContext context, IEnumerable<Event> inputEvents);
+        Task ActivityStarting(QualifiedExecutionContext context, IEnumerable<Event> inputEvents);
 
-        Task ActivityCompleted(ExecutionContext context, IEnumerable<Event> outputEvents);
+        Task ActivityCompleted(QualifiedExecutionContext context, IEnumerable<Event> outputEvents);
 
-        Task EventPublished(ExecutionContext context, Event @event);
+        Task EventPublished(QualifiedExecutionContext context, Event @event);
 
         Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents);
 
@@ -26,8 +26,8 @@ namespace EventDrivenWorkflow.Diagnostics
 
         Task HandleControlMessageFailed(Exception exception, ControlMessage eventMessage);
 
-        Task ActivityExecutionFailed(Exception exception, ExecutionContext context);
+        Task ActivityExecutionFailed(Exception exception, QualifiedExecutionContext context);
 
-        Task ActivityExecutionTimeout(ExecutionContext context);
+        Task ActivityExecutionTimeout(QualifiedExecutionContext context);
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EventDrivenWorkflow.Definitions;
+using EventDrivenWorkflow.IntegrationTests.Activities;
 
 namespace EventDrivenWorkflow.IntegrationTests.Environment
 {

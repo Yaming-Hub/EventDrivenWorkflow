@@ -18,7 +18,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
         {
             var eventStore = new EntityStore<Entity<EventModel>>();
             var activityStateStore = new EntityStore<Entity<ActivityState>>();
-            var activityExecutionContextStore = new EntityStore<Entity<ExecutionContext>>();
+            var activityExecutionContextStore = new EntityStore<Entity<QualifiedExecutionContext>>();
             var eventPresenceStore = new EntityStore<Entity<EventReference>>();
             var eventQueue = new MessageQueue<EventMessage>();
             var controlQueue = new MessageQueue<ControlMessage>();

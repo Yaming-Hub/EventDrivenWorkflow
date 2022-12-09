@@ -22,12 +22,12 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.WorkflowStarted(context));
         }
 
-        public Task ActivityCompleted(ExecutionContext context, IEnumerable<Event> outputEvents)
+        public Task ActivityCompleted(QualifiedExecutionContext context, IEnumerable<Event> outputEvents)
         {
             return IgnoreException(() => observer.ActivityCompleted(context, outputEvents));
         }
 
-        public Task ActivityStarting(ExecutionContext context, IEnumerable<Event> inputEvents)
+        public Task ActivityStarting(QualifiedExecutionContext context, IEnumerable<Event> inputEvents)
         {
             return IgnoreException(() => observer.ActivityStarting(context, inputEvents));
         }
@@ -37,7 +37,7 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.EventAccepted(context, @event));
         }
 
-        public Task EventPublished(ExecutionContext context, Event @event)
+        public Task EventPublished(QualifiedExecutionContext context, Event @event)
         {
             return IgnoreException(() => observer.EventPublished(context, @event));
         }
@@ -57,12 +57,12 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.HandleControlMessageFailed(context, controlMessage));
         }
 
-        public Task ActivityExecutionFailed(Exception exception, ExecutionContext context)
+        public Task ActivityExecutionFailed(Exception exception, QualifiedExecutionContext context)
         {
             return IgnoreException(() => observer.ActivityExecutionFailed(exception, context));
         }
 
-        public Task ActivityExecutionTimeout(ExecutionContext context)
+        public Task ActivityExecutionTimeout(QualifiedExecutionContext context)
         {
             return IgnoreException(() => observer.ActivityExecutionTimeout(context));
         }

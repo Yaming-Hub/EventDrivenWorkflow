@@ -66,7 +66,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
                 }
 
                 public Task BeginExecute(
-                   ExecutionContext context,
+                   QualifiedExecutionContext context,
                    IEventRetriever eventRetriever)
                 {
                     Trace.WriteLine($"[AsyncExecutable.BeginExecute] Path={context.GetPath()}");

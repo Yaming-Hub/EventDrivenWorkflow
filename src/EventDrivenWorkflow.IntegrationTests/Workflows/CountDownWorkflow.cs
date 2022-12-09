@@ -48,7 +48,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
             private class Forward : IExecutable
             {
                 public Task Execute(
-                   ExecutionContext context,
+                   QualifiedExecutionContext context,
                    IEventRetriever eventRetriever,
                    IEventPublisher eventPublisher,
                    CancellationToken cancellationToken)
@@ -63,7 +63,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
             private class CountDown : IExecutable
             {
                 public Task Execute(
-                    ExecutionContext context,
+                    QualifiedExecutionContext context,
                     IEventRetriever eventRetriever,
                     IEventPublisher eventPublisher,
                     CancellationToken cancellationToken)

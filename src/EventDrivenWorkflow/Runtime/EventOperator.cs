@@ -38,7 +38,7 @@ namespace EventDrivenWorkflow.Runtime
         internal EventOperator(
             WorkflowOrchestrator orchestrator,
             ActivityDefinition activityDefinition,
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             IReadOnlyDictionary<string, Event> inputEvents)
         {
             this.orchestrator = orchestrator;
@@ -57,7 +57,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <summary>
         /// Gets activity executing execution info.
         /// </summary>
-        public ExecutionContext Context { get; }
+        public QualifiedExecutionContext Context { get; }
 
         public Event GetEvent(string eventName)
         {

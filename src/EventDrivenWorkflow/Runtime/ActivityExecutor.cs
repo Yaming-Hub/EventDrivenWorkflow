@@ -38,7 +38,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="eventModel">The triggering event model.</param>
         /// <param name="inputEvents">A dictionary contains input events.</param>
         /// <returns>A task represents the async operation.</returns>
-        public async Task<ExecutionContext> Execute(
+        public async Task<QualifiedExecutionContext> Execute(
             WorkflowExecutionContext workflowExecutionContext,
             ActivityDefinition activityDefinition,
             IReadOnlyDictionary<string, Event> inputEvents,
@@ -46,7 +46,7 @@ namespace EventDrivenWorkflow.Runtime
             EventModel triggerEvent)
         {
             // Construct activity execution context.
-            var context = new ExecutionContext
+            var context = new QualifiedExecutionContext
             {
                 WorkflowExecutionContext = workflowExecutionContext,
                 ActivityExecutionContext = new ActivityExecutionContext
@@ -76,7 +76,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="inputEvents">A dictionary contains input events.</param>
         /// <returns>A task represents the async operation.</returns>
         public async Task Execute(
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             ActivityDefinition activityDefinition,
             IReadOnlyDictionary<string, Event> inputEvents,
             IReadOnlyDictionary<string, EventModel> inputEventModels,
@@ -120,7 +120,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
         public async Task PublishOutputEvents(
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             ActivityDefinition activityDefinition,
             EventOperator eventOperator)
         {
@@ -256,7 +256,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
         private async Task ExecuteSync(
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             ActivityDefinition activityDefinition,
             EventOperator eventOperator,
             EventModel triggerEvent)
@@ -333,7 +333,7 @@ namespace EventDrivenWorkflow.Runtime
                         {
                             Event = triggerEvent,
                             TargetActivityName = activityDefinition.Name,
-                            ExecutionContext = new ExecutionContext
+                            ExecutionContext = new QualifiedExecutionContext
                             {
                                 WorkflowExecutionContext = context.WorkflowExecutionContext,
                                 ActivityExecutionContext = IncrementAttemptCount(context.ActivityExecutionContext),
@@ -360,7 +360,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
         private async Task ExecuteAsync(
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             ActivityDefinition activityDefinition,
             EventOperator eventOperator,
             EventModel triggerEvent)
@@ -369,7 +369,7 @@ namespace EventDrivenWorkflow.Runtime
             await this.orchestrator.Engine.ActivityExecutionContextStore.Upsert(
                 partitionKey: context.WorkflowExecutionContext.PartitionKey,
                 key: context.ActivityExecutionId.ToString(),
-                new Entity<ExecutionContext>
+                new Entity<QualifiedExecutionContext>
                 {
                     Value = context,
                     ExpireDateTime = context.WorkflowExecutionContext.WorkflowExpireDateTime,
@@ -421,7 +421,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="eventOperator">The event operator.</param>
         /// <returns>A task represents the async operation.</returns>
         private async Task ExecuteComplete(
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             IReadOnlyDictionary<string, Event> inputEvents,
             IReadOnlyDictionary<string, EventModel> inputEventModels)
         {

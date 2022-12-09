@@ -15,12 +15,12 @@ namespace EventDrivenWorkflow.Diagnostics
             return Task.CompletedTask;
         }
 
-        public Task ActivityCompleted(ExecutionContext context, IEnumerable<Event> outputEvents)
+        public Task ActivityCompleted(QualifiedExecutionContext context, IEnumerable<Event> outputEvents)
         {
             return Task.CompletedTask;
         }
 
-        public Task ActivityStarting(ExecutionContext context, IEnumerable<Event> inputEvents)
+        public Task ActivityStarting(QualifiedExecutionContext context, IEnumerable<Event> inputEvents)
         {
             return Task.CompletedTask;
         }
@@ -29,7 +29,7 @@ namespace EventDrivenWorkflow.Diagnostics
         {
             return Task.CompletedTask;
         }
-        public Task EventPublished(ExecutionContext context, Event @event)
+        public Task EventPublished(QualifiedExecutionContext context, Event @event)
         {
             return Task.CompletedTask;
         }
@@ -49,12 +49,12 @@ namespace EventDrivenWorkflow.Diagnostics
             return Task.CompletedTask;
         }
 
-        public Task ActivityExecutionFailed(Exception exception, ExecutionContext context)
+        public Task ActivityExecutionFailed(Exception exception, QualifiedExecutionContext context)
         {
             return Task.CompletedTask;
         }
 
-        public Task ActivityExecutionTimeout(ExecutionContext context)
+        public Task ActivityExecutionTimeout(QualifiedExecutionContext context)
         {
             return Task.CompletedTask;
         }

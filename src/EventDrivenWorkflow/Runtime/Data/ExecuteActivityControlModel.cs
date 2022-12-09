@@ -13,7 +13,7 @@ namespace EventDrivenWorkflow.Runtime.Data
         /// </summary>
         public string TargetActivityName { get; init; }
 
-        public ExecutionContext ExecutionContext { get; init; }
+        public QualifiedExecutionContext ExecutionContext { get; init; }
 
         /// <summary>
         /// Gets the event model.

@@ -22,17 +22,17 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
         }
 
-        public Task ActivityStarting(ExecutionContext context, IEnumerable<Event> inputEvents)
+        public Task ActivityStarting(QualifiedExecutionContext context, IEnumerable<Event> inputEvents)
         {
             return Log($"ActivityStarting   Activity={context.GetPath()} Events={string.Join(",", inputEvents.Select(x => x.Name))}");
         }
 
-        public Task ActivityCompleted(ExecutionContext context, IEnumerable<Event> outputEvents)
+        public Task ActivityCompleted(QualifiedExecutionContext context, IEnumerable<Event> outputEvents)
         {
             return Log($"ActivityCompleted  Activity={context.GetPath()} Events={string.Join(",", outputEvents.Select(x => x.Name))}");
         }
 
-        public Task EventPublished(ExecutionContext context, Event @event)
+        public Task EventPublished(QualifiedExecutionContext context, Event @event)
         {
             return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
         }
@@ -52,12 +52,12 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"HandleControlMessageFailed {exception}");
         }
 
-        public Task ActivityExecutionFailed(Exception exception, ExecutionContext context)
+        public Task ActivityExecutionFailed(Exception exception, QualifiedExecutionContext context)
         {
             return Log($"ActivityExecutionFailed {exception} Activity={context.GetPath()}");
         }
 
-        public Task ActivityExecutionTimeout(ExecutionContext context)
+        public Task ActivityExecutionTimeout(QualifiedExecutionContext context)
         {
             return Log($"ActivityExecutionTimeout Activity={context.GetPath()}");
         }

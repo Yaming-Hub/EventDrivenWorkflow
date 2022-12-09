@@ -68,7 +68,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
                 }
 
                 public Task Execute(
-                   ExecutionContext context,
+                   QualifiedExecutionContext context,
                    IEventRetriever eventRetriever,
                    IEventPublisher eventPublisher,
                    CancellationToken cancellationToken)

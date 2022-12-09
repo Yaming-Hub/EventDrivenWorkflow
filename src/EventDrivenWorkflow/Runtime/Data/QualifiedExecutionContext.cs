@@ -9,7 +9,7 @@ namespace EventDrivenWorkflow.Runtime.Data
     /// <summary>
     /// This class combines workflow execution context and activity execution context.
     /// </summary>
-    public sealed class ExecutionContext
+    public sealed class QualifiedExecutionContext
     {
         /// <summary>
         /// Gets workflow execution context.

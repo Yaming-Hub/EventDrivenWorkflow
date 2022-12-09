@@ -7,7 +7,7 @@ namespace EventDrivenWorkflow.IntegrationTests
 
     public static class ActivityExecutionContextExtensions
     {
-        public static string GetPath(this ExecutionContext context)
+        public static string GetPath(this QualifiedExecutionContext context)
         {
             return context.ActivityExecutionId.ToString();
         }

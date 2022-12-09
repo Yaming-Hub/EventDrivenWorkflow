@@ -37,7 +37,7 @@ namespace EventDrivenWorkflow.Runtime
             ISerializer serializer,
             IEntityStore<Entity<EventModel>> eventStore,
             IEntityStore<Entity<ActivityState>> activityStateStore,
-            IEntityStore<Entity<ExecutionContext>> activityExecutionContextStore,
+            IEntityStore<Entity<QualifiedExecutionContext>> activityExecutionContextStore,
             IEntityStore<Entity<EventReference>> eventPresenceStore,
             IWorkflowObserver observer,
             ITimeProvider timeProvider = null)
@@ -94,7 +94,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <summary>
         /// Gets the activity execution context store.
         /// </summary>
-        internal IEntityStore<Entity<ExecutionContext>> ActivityExecutionContextStore { get; }
+        internal IEntityStore<Entity<QualifiedExecutionContext>> ActivityExecutionContextStore { get; }
 
         /// <summary>
         /// Gets the event presence store.

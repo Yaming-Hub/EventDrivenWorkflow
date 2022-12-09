@@ -45,7 +45,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
             else
             {
                 // Retry.
-                var context = new ExecutionContext
+                var context = new QualifiedExecutionContext
                 {
                     WorkflowExecutionContext = model.ExecutionContext.WorkflowExecutionContext,
                     ActivityExecutionContext = model.ExecutionContext.ActivityExecutionContext

@@ -21,22 +21,11 @@ namespace Core.IntegrationTests
         [TestMethod]
         public async Task TestSubWorkflow()
         {
-            // e0 -> a1 ... se0 -> b1 -> se1  ... e1 -> a2
-
-            var builder = new WorkflowBuilder("Parent");
-            builder.RegisterEvent("e0");
-            builder.RegisterEvent("e1");
-            builder.RegisterEvent("e2");
-            builder.AddActivity("a1").Subscribe("e0").Publish("e1");
-            builder.AddActivity("a2").Subscribe("e1").Publish("e2");
-            builder.AddActivity("a3").Subscribe("e2");
-
-            var workflowDefinition = builder.Build();
-            var activityFactory = new LogActivityFactory(workflowDefinition);
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
-            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory);
+            var workflow = new InvokeChildWorkflow(engine);
 
-            await orchestrator.StartNew(options: new WorkflowExecutionOptions { TrackProgress = true });
+            await workflow.ParentWorkflowOrchestrator.StartNew();
+
 
             await Task.Delay(TimeSpan.FromSeconds(3));
 

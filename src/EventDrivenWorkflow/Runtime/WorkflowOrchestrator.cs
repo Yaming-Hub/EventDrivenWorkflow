@@ -113,9 +113,22 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="partitionKey">The partition key of the workflow.</param>
         /// <param name="options">The workflow execution options.</param>
         /// <returns>The workflow id.</returns>
-        public Task<WorkflowExecutionContext> StartNew<T>(T payload, ExecutionContext parent, IReadOnlyDictionary<string, string> eventMap)
+        public Task<WorkflowExecutionContext> StartNew(QualifiedExecutionContext parentExecutionContext, IReadOnlyDictionary<string, string> eventMap)
         {
-            return StartNew(payloadType: typeof(T), payload: payload, parentExecutionContext: parent, eventMap: eventMap);
+            return StartNew(payloadType: null, payload: null, parentExecutionContext: parentExecutionContext, eventMap: eventMap);
+        }
+
+        /// <summary>
+        /// Start a new workflow with payload.
+        /// </summary>
+        /// <typeparam name="T">Type of the start event payload.</typeparam>
+        /// <param name="payload">The payload of the start event.</param>
+        /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
+        /// <returns>The workflow id.</returns>
+        public Task<WorkflowExecutionContext> StartNew<T>(T payload, QualifiedExecutionContext parentExecutionContext, IReadOnlyDictionary<string, string> eventMap)
+        {
+            return StartNew(payloadType: typeof(T), payload: payload, parentExecutionContext: parentExecutionContext, eventMap: eventMap);
         }
 
         /// <summary>
@@ -157,7 +170,7 @@ namespace EventDrivenWorkflow.Runtime
         private Task<WorkflowExecutionContext> StartNew(
             Type payloadType,
             object payload,
-            ExecutionContext parentExecutionContext, 
+            QualifiedExecutionContext parentExecutionContext, 
             IReadOnlyDictionary<string, string> eventMap)
         {
             var workflowExecutionContext = new WorkflowExecutionContext
@@ -242,11 +255,11 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="context">The activity execution context.</param>
         /// <param name="outputEvents">An array contains output events.</param>
         /// <returns>A task represents the async operation.</returns>
-        public async Task EndExecute(QualifiedActivityExecutionId executionId, Action<ExecutionContext, IEventPublisher> publishOutputEvent)
+        public async Task EndExecute(QualifiedActivityExecutionId executionId, Action<QualifiedExecutionContext, IEventPublisher> publishOutputEvent)
         {
             var workflowDefinition = this.WorkflowDefinition;
 
-            ExecutionContext context = null;
+            QualifiedExecutionContext context = null;
             string key = executionId.ToString();
 
             try

@@ -4,7 +4,7 @@
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
 
-namespace EventDrivenWorkflow.IntegrationTests.Environment
+namespace EventDrivenWorkflow.IntegrationTests.Activities
 {
     using System.Diagnostics;
     using EventDrivenWorkflow.Definitions;
@@ -20,14 +20,14 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
         }
 
         public Task Execute(
-            ExecutionContext context,
+            QualifiedExecutionContext context,
             IEventRetriever eventRetriever,
             IEventPublisher eventPublisher,
             CancellationToken cancellationToken)
         {
             Trace.WriteLine($"Execute {context.GetPath()}");
 
-            var activityDefinition = this.workflowDefinition.ActivityDefinitions[context.ActivityExecutionContext.ActivityName];
+            var activityDefinition = workflowDefinition.ActivityDefinitions[context.ActivityExecutionContext.ActivityName];
             foreach (var outputEvent in activityDefinition.OutputEventDefinitions.Values)
             {
                 eventPublisher.PublishEvent(outputEvent.Name);
