@@ -237,10 +237,7 @@ namespace EventDrivenWorkflow.Runtime
             {
                 var trackWorkflowTimeoutMessage = new ControlMessage
                 {
-                    ControlModel = new ControlModel
-                    {
-                        Operation = ControlOperation.WorkflowTimeout,
-                    },
+                    Operation = ControlOperation.WorkflowTimeout,
                     WorkflowName = workflowExecutionContext.WorkflowName
                 };
 

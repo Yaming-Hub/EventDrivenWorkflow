@@ -42,6 +42,7 @@ namespace EventDrivenWorkflow.Runtime
             WorkflowExecutionContext workflowExecutionContext,
             ActivityDefinition activityDefinition,
             IReadOnlyDictionary<string, Event> inputEvents,
+            IReadOnlyDictionary<string, EventModel> inputEventModels,
             EventModel triggerEvent)
         {
             // Construct activity execution context.
@@ -62,7 +63,7 @@ namespace EventDrivenWorkflow.Runtime
                 }
             };
 
-            await this.Execute(context, activityDefinition, inputEvents, triggerEvent);
+            await this.Execute(context, activityDefinition, inputEvents, inputEventModels, triggerEvent);
             return context;
         }
 
@@ -78,6 +79,7 @@ namespace EventDrivenWorkflow.Runtime
             ExecutionContext context,
             ActivityDefinition activityDefinition,
             IReadOnlyDictionary<string, Event> inputEvents,
+            IReadOnlyDictionary<string, EventModel> inputEventModels,
             EventModel triggerEventModel)
         {
             // Now we got all incoming events for the activity, let's run it.
@@ -91,7 +93,7 @@ namespace EventDrivenWorkflow.Runtime
 
             if (activityDefinition.IsCompleteActivity)
             {
-                await this.ExecuteComplete(context, inputEvents);
+                await this.ExecuteComplete(context, inputEvents, inputEventModels);
             }
             else if (activityDefinition.IsAsync)
             {
@@ -130,7 +132,21 @@ namespace EventDrivenWorkflow.Runtime
             {
                 var eventDefinition = activityDefinition.OutputEventDefinitions[outputEvent.Name];
                 var payloadType = eventDefinition.PayloadType;
-                object payload = outputEvent.GetPayload(payloadType);
+
+                Payload payload = null;
+                object value = outputEvent.Value;
+                if (value is Payload)
+                {
+                    payload = (Payload) value;
+                }
+                else
+                {
+                    payload = new Payload
+                    {
+                        TypeName = payloadType?.FullName,
+                        Body = value == null ? null : this.orchestrator.Engine.Serializer.Serialize(value),
+                    };
+                }
 
                 var message = new EventMessage
                 {
@@ -139,11 +155,7 @@ namespace EventDrivenWorkflow.Runtime
                         Id = outputEvent.Id,
                         SourceEngineId = outputEvent.SourceEngineId,
                         Name = outputEvent.Name,
-                        Payload = new Payload
-                        {
-                            TypeName = payloadType?.FullName,
-                            Body = payload == null ? null : this.orchestrator.Engine.Serializer.Serialize(payload),
-                        },
+                        Payload = payload,
                         SourceActivity = new ActivityReference
                         {
                             Name = context.ActivityExecutionContext.ActivityName,
@@ -410,50 +422,27 @@ namespace EventDrivenWorkflow.Runtime
         /// <returns>A task represents the async operation.</returns>
         private async Task ExecuteComplete(
             ExecutionContext context,
-            IReadOnlyDictionary<string, Event> inputEvents)
+            IReadOnlyDictionary<string, Event> inputEvents,
+            IReadOnlyDictionary<string, EventModel> inputEventModels)
         {
             await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext, inputEvents.Select(x => x.Value));
 
             var callbackInfo = context.WorkflowExecutionContext.CallbackInfo;
             if (callbackInfo != null)
             {
-                // Resume parent workflow if callback info is available.
-                var parentWorkflowName = callbackInfo.ActivityExecutionId.WorkflowName;
-                var parentOrchestrator = this.orchestrator.Engine.WorkflowOrchestratorProvider.GetWorkflowOrchestrator(parentWorkflowName);
-                if (parentOrchestrator == null)
+                var controlMessage = new ControlMessage
                 {
-                    throw new WorkflowRuntimeException(isTransient: false, $"The orchestartor of workflow \"{parentWorkflowName}\"is not found.");
-                }
-
-                await parentOrchestrator.EndExecute(
-                    executionId: callbackInfo.ActivityExecutionId,
-                    publishOutputEvent: (executionContext, publisher) =>
+                    WorkflowName = callbackInfo.ActivityExecutionId.WorkflowName,
+                    Operation = ControlOperation.CallbackActivity,
+                    ControlModel = new CallbackActivityControlModel
                     {
-                        foreach (var inputEvent in inputEvents)
-                        {
-                            if (callbackInfo.EventMap.TryGetValue(inputEvent.Key, out string outputEventName))
-                            {
-                                if (!parentOrchestrator.WorkflowDefinition.EventDefinitions.TryGetValue(outputEventName, out var outputEvent))
-                                {
-                                    throw new WorkflowRuntimeException(isTransient: false, $"The mapped output event \"{outputEventName}\" is not defined.");
-                                }
+                        CallbackInfo = callbackInfo,
+                        Events = inputEventModels.Values.ToList(),
+                    }
+                };
 
-                                object payload;
-                                try
-                                {
-                                    payload = inputEvent.Value.GetPayload(outputEvent.PayloadType);
-                                }
-                                catch (InvalidCastException e)
-                                {
-                                    throw new WorkflowRuntimeException(
-                                        isTransient: false,
-                                        $"The input event \"{inputEvent.Key}\" payload type doesn't match mapped output event \"{outputEventName}\".");
-                                }
+                await this.orchestrator.Engine.ControlMessageSender.Send(controlMessage);
 
-                                publisher.PublishEvent(outputEventName, payload);
-                            }
-                        }
-                    });
             }
         }
 

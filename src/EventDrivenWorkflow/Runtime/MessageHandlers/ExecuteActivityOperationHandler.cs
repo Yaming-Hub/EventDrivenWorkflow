@@ -39,6 +39,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                     model.ExecutionContext.WorkflowExecutionContext,
                     activityDefinition,
                     inputEvents: new Dictionary<string, Event>(),
+                    inputEventModels: new Dictionary<string, EventModel>(),
                     triggerEvent: model.Event);
             }
             else
@@ -52,11 +53,13 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
 
                 // Try to load all input event for the activity.
                 var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count);
+                var inputEventModels = new Dictionary<string, EventModel>(capacity: activityDefinition.InputEventDefinitions.Count);
                 var allInputEventsAvailable = await orchestrator.InputEventLoader.TryLoadInputEvents(
                     activityDefinition: activityDefinition,
                     workflowExecutionContext: model.ExecutionContext.WorkflowExecutionContext,
                     triggerEventModel: model.Event,
-                    inputEvents: inputEvents);
+                    inputEvents: inputEvents,
+                    inputEventModels: inputEventModels);
 
                 if (!allInputEventsAvailable)
                 {
@@ -68,6 +71,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                     context,
                     activityDefinition,
                     inputEvents: inputEvents,
+                    inputEventModels: inputEventModels,
                     triggerEventModel: model.Event);
             }
 

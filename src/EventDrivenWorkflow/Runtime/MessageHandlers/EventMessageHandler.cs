@@ -90,11 +90,13 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
 
             // Try to load all input event for the activity.
             var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count);
+            var inputEventModels = new Dictionary<string, EventModel>(capacity: activityDefinition.InputEventDefinitions.Count);
             var allInputEventsAvailable = await this.orchestrator.InputEventLoader.TryLoadInputEvents(
                 activityDefinition: activityDefinition,
                 workflowExecutionContext: message.WorkflowExecutionContext,
                 triggerEventModel: message.EventModel,
-                inputEvents: inputEvents);
+                inputEvents: inputEvents,
+                inputEventModels: inputEventModels);
 
             if (!allInputEventsAvailable)
             {
@@ -107,6 +109,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                 message.WorkflowExecutionContext,
                 activityDefinition,
                 inputEvents,
+                inputEventModels,
                 triggerEvent: message.EventModel);
 
             // Delete the trigger event presence after execution completes successfully.

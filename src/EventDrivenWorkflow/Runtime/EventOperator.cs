@@ -95,10 +95,8 @@ namespace EventDrivenWorkflow.Runtime
         /// <inheritdoc/>
         public void PublishEvent(string eventName, object payload)
         {
-
             this.PublishEvent(eventName, payload, delayDuration: TimeSpan.Zero);
         }
-
 
         /// <inheritdoc/>
         public void PublishEvent(string eventName, object payload, TimeSpan delayDuration)
@@ -110,7 +108,7 @@ namespace EventDrivenWorkflow.Runtime
                 Id = Guid.NewGuid(),
                 Name = eventName,
                 DelayDuration = delayDuration,
-                Payload = payload,
+                Value = payload,
                 SourceEngineId = this.orchestrator.Engine.Id
             };
 
@@ -162,11 +160,17 @@ namespace EventDrivenWorkflow.Runtime
                 throw new ArgumentException($"The output event name {eventName} is not defined.");
             }
 
-            if (eventDefinition.PayloadType != payloadType)
+            string payloadTypeName = payloadType?.FullName;
+            if (payloadType == typeof(Payload) && payload != null)
+            {
+                payloadTypeName = ((Payload)payload).TypeName;
+            }
+
+            if (eventDefinition.PayloadType?.FullName != payloadTypeName)
             {
                 throw new ArgumentException(
                     $"The output event {eventName} payload type {eventDefinition.PayloadType?.FullName ?? "<null>"} " +
-                    $"is different from the parameter payload type {payloadType?.FullName ?? "<null>"}.");
+                    $"is different from the parameter payload type {payloadTypeName ?? "<null>"}.");
             }
 
             if (this.outputEvents.ContainsKey(eventName))

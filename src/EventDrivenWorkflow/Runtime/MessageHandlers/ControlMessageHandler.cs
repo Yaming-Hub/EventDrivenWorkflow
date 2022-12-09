@@ -32,6 +32,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
             this.operationHandlers = operationHandlers ?? new Dictionary<ControlOperation, IControlOperationHandler>
             {
                 [ControlOperation.ExecuteActivity] = new ExecuteActivityOperationHandler(),
+                [ControlOperation.CallbackActivity] = new CallbackActivityOperationHandler(),
             };
         }
 

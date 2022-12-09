@@ -31,6 +31,6 @@ namespace EventDrivenWorkflow
         /// </summary>
         public string SourceEngineId { get; init; }
 
-        public object Payload { get; internal set; }
+        public object Value { get; internal set; }
     }
 }

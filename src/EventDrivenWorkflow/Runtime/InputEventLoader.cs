@@ -31,7 +31,8 @@ namespace EventDrivenWorkflow.Runtime
             ActivityDefinition activityDefinition,
             WorkflowExecutionContext workflowExecutionContext,
             EventModel triggerEventModel,
-            Dictionary<string, Event> inputEvents)
+            Dictionary<string, Event> inputEvents,
+            Dictionary<string, EventModel> inputEventModels)
         {
             if (activityDefinition.InputEventDefinitions.Count == 0)
             {
@@ -46,6 +47,7 @@ namespace EventDrivenWorkflow.Runtime
 
             var triggerEvent = MapToEvent(triggerEventModel, triggerEventDefinition.PayloadType);
             inputEvents[triggerEvent.Name] = triggerEvent;
+            inputEventModels[triggerEvent.Name] = triggerEventModel;
 
             if (activityDefinition.InputEventDefinitions.Count == 1)
             {
@@ -151,6 +153,7 @@ namespace EventDrivenWorkflow.Runtime
 
                     object payload = orchestrator.Engine.Serializer.Deserialize(otherEventEntity.Value.Payload.Body, otherEventDefinition.PayloadType);
                     inputEvents[otherEventEntity.Value.Name] = otherEvent.SetPayload(otherEventDefinition.PayloadType, payload);
+                    inputEventModels[otherEventEntity.Value.Name] = otherEventEntity.Value;
                 }
 
                 if (inputEvents.Count != activityStateEntity.Value.AvailableInputEvents.Count)

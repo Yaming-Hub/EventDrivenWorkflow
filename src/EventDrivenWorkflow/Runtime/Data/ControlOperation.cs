@@ -9,6 +9,7 @@ namespace EventDrivenWorkflow.Runtime.Data
     public enum ControlOperation
     {
         ExecuteActivity,
+        CallbackActivity,
         WorkflowTimeout,
     }
 }

@@ -53,7 +53,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
                    IEventPublisher eventPublisher,
                    CancellationToken cancellationToken)
                 {
-                    int count = (int)eventRetriever.GetEvent("countParameter").Payload;
+                    int count = (int)eventRetriever.GetEvent("countParameter").Value;
                     Trace.WriteLine($"[ForwardActivity] Count={count} Path={context.GetPath()}");
                     eventPublisher.PublishEvent("countVarible", count);
                     return Task.CompletedTask;
@@ -68,7 +68,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
                     IEventPublisher eventPublisher,
                     CancellationToken cancellationToken)
                 {
-                    int count = (int)eventRetriever.GetEvent("countVarible").Payload;
+                    int count = (int)eventRetriever.GetEvent("countVarible").Value;
                     Trace.WriteLine($"[CountDownActivity] Count={count} Path={context.GetPath()}");
 
                     count--;

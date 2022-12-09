@@ -16,10 +16,5 @@ namespace EventDrivenWorkflow.Runtime.Data
 
         }
 
-        /// <summary>
-        /// Gets the control operation.
-        /// </summary>
-        public ControlOperation Operation { get; init; }
-
     }
 }

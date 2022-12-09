@@ -35,7 +35,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <returns>The payload object.</returns>
         public static object GetPayload(this Event @event, Type payloadType)
         {
-            return @event.Payload;
+            return @event.Value;
             //if (payloadType == null)
             //{
             //    return null;
@@ -71,7 +71,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <returns>The copy event with payload.</returns>
         public static Event SetPayload(this Event @event, Type payloadType, object payload)
         {
-            @event.Payload = payload;
+            @event.Value = payload;
             return @event;
             //if (payloadType == null)
             //{
