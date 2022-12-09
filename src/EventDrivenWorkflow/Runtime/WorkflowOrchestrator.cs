@@ -137,9 +137,9 @@ namespace EventDrivenWorkflow.Runtime
                     $"The payload type {payloadType} doesn't match start event payload type {triggerEvent.PayloadType}");
             }
 
-            var startEventMessage = new Message<EventModel>
+            var startEventMessage = new EventMessage
             {
-                Value = new EventModel
+                EventModel = new EventModel
                 {
                     Id = Guid.NewGuid(),
                     Name = triggerEvent.Name,
@@ -159,19 +159,19 @@ namespace EventDrivenWorkflow.Runtime
 
             await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
 
-            if (options.TrackProgress)
-            {
-                var trackWorkflowTimeoutMessage = new Message<ControlModel>
-                {
-                    Value = new ControlModel
-                    {
-                        Operation = ControlOperation.WorkflowTimeout,
-                    },
-                    WorkflowExecutionContext = workflowExecutionContext,
-                };
+            //if (options.TrackProgress)
+            //{
+            //    var trackWorkflowTimeoutMessage = new ControlMessage
+            //    {
+            //        Value = new ControlModel
+            //        {
+            //            Operation = ControlOperation.WorkflowTimeout,
+            //        },
+            //        WorkflowExecutionContext = workflowExecutionContext,
+            //    };
 
-                await this.Engine.ControlMessageSender.Send(trackWorkflowTimeoutMessage);
-            }
+            //    await this.Engine.ControlMessageSender.Send(trackWorkflowTimeoutMessage);
+            //}
 
             return workflowExecutionContext;
         }

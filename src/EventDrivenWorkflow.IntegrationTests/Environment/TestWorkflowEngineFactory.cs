@@ -29,7 +29,6 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
 
             var engine = new WorkflowEngine(
                 id: "test",
-                workflowOrchestratorProvider: workflowOrchestratorProvider,
                 eventMessageProcessor: eventMessageProcessor,
                 controlMessageProcessor: controlMessageProcessor,
                 eventMessageSender: eventQueue,

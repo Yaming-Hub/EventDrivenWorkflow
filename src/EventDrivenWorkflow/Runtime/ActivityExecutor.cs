@@ -208,21 +208,21 @@ namespace EventDrivenWorkflow.Runtime
                             throw new WorkflowRuntimeException(isTransient: false, "At least one active event should be found.");
                         }
 
-            //            workflowHasCompleted = true;
-            //        }
-            //        else if (activeEvents.Count == 1 && context.ActivityExecutionContext.TriggerEventReference != null)
-            //        {
-            //            // If there is only one active event and this execution has trigger event, then the active event
-            //            // must match trigger event. Otherwise, it's an invalid workflow state.
-            //            if (activeEvents[0].Value.Name != context.ActivityExecutionContext.TriggerEventReference.Name ||
-            //                activeEvents[0].Value.Id != context.ActivityExecutionContext.TriggerEventReference.Id)
-            //            {
-            //                throw new WorkflowRuntimeException(isTransient: false, "The active event doesn't match.");
-            //            }
+                        //            workflowHasCompleted = true;
+                        //        }
+                        //        else if (activeEvents.Count == 1 && context.ActivityExecutionContext.TriggerEventReference != null)
+                        //        {
+                        //            // If there is only one active event and this execution has trigger event, then the active event
+                        //            // must match trigger event. Otherwise, it's an invalid workflow state.
+                        //            if (activeEvents[0].Value.Name != context.ActivityExecutionContext.TriggerEventReference.Name ||
+                        //                activeEvents[0].Value.Id != context.ActivityExecutionContext.TriggerEventReference.Id)
+                        //            {
+                        //                throw new WorkflowRuntimeException(isTransient: false, "The active event doesn't match.");
+                        //            }
 
-            //            workflowHasCompleted = true;
-            //        }
-
+                        //            workflowHasCompleted = true;
+                        //        }
+                    }
                     if (workflowHasCompleted)
                     {
                         await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext, null);
@@ -320,15 +320,15 @@ namespace EventDrivenWorkflow.Runtime
                         ControlModel = new ExecuteActivityControlModel
                         {
                             Event = triggerEvent,
-                            Operation = ControlOperation.ExecuteActivity,
                             TargetActivityName = activityDefinition.Name,
                             ExecutionContext = new ExecutionContext
                             {
                                 WorkflowExecutionContext = context.WorkflowExecutionContext,
                                 ActivityExecutionContext = IncrementAttemptCount(context.ActivityExecutionContext),
-                            }                            
+                            }
                         },
-                        
+                        Operation = ControlOperation.ExecuteActivity,
+
                     };
 
                     await this.orchestrator.Engine.ControlMessageSender.Send(controlMessage, activityDefinition.RetryPolicy.DelayDuration);

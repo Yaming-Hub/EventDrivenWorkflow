@@ -79,12 +79,12 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
             }
 
             // Find the activity that subscribe to the current event.
-            if (!workflowDefinition.EventToConsumerActivityMap.TryGetValue(message.Value.Name, out var activityDefinition))
+            if (!workflowDefinition.EventToConsumerActivityMap.TryGetValue(message.EventModel.Name, out var activityDefinition))
             {
                 // This could happen if the workflow definition has changed.
                 throw new WorkflowRuntimeException(
                     isTransient: false,
-                    $"There is no action subscribe to event {message.Value.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] " +
+                    $"There is no action subscribe to event {message.EventModel.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] " +
                     $" in workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
             }
 

@@ -43,7 +43,6 @@ namespace EventDrivenWorkflow.Runtime
             ITimeProvider timeProvider = null)
         {
             this.Id = id;
-            this.WorkflowOrchestratorProvider = workflowOrchestratorProvider;
             this.EventMessageProcessor = eventMessageProcessor;
             this.ControlMessageProcessor = controlMessageProcessor;
             this.EventMessageSender = eventMessageSender;
