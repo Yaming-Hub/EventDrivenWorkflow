@@ -61,8 +61,6 @@ namespace EventDrivenWorkflow.Runtime
         /// </summary>
         internal string Id { get; }
 
-        public IWorkflowOrchestratorProvider WorkflowOrchestratorProvider { get; }
-
         /// <summary>
         /// Gets the event message processor.
         /// </summary>

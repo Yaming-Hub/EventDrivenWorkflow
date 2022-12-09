@@ -106,6 +106,19 @@ namespace EventDrivenWorkflow.Runtime
         }
 
         /// <summary>
+        /// Start a new workflow with payload.
+        /// </summary>
+        /// <typeparam name="T">Type of the start event payload.</typeparam>
+        /// <param name="payload">The payload of the start event.</param>
+        /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
+        /// <returns>The workflow id.</returns>
+        public Task<WorkflowExecutionContext> StartNew<T>(T payload, ExecutionContext parent, IReadOnlyDictionary<string, string> eventMap)
+        {
+            return StartNew(payloadType: typeof(T), payload: payload, parentExecutionContext: parent, eventMap: eventMap);
+        }
+
+        /// <summary>
         /// Start new workflow.
         /// </summary>
         /// <param name="payloadType">Type of the start event payload.</param>
@@ -113,7 +126,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="partitionKey">The partition key of the workflow.</param>
         /// <param name="options">The workflow execution options.</param>
         /// <returns>The workflow id.</returns>
-        private async Task<WorkflowExecutionContext> StartNew(Type payloadType, object payload, string partitionKey, WorkflowExecutionOptions options)
+        private Task<WorkflowExecutionContext> StartNew(Type payloadType, object payload, string partitionKey, WorkflowExecutionOptions options)
         {
             Guid executionId = Guid.NewGuid();
             options = options ?? WorkflowExecutionOptions.Default;
@@ -130,11 +143,61 @@ namespace EventDrivenWorkflow.Runtime
                 Options = options,
             };
 
-            var triggerEvent = this.WorkflowDefinition.TriggerEvent;
-            if (triggerEvent.PayloadType != payloadType)
+            return StartNew(payloadType, payload, workflowExecutionContext);
+        }
+
+        /// <summary>
+        /// Start new workflow with parent execution context.
+        /// </summary>
+        /// <param name="payloadType">Type of the start event payload.</param>
+        /// <param name="payload">The payload of the start event.</param>
+        /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
+        /// <returns>The workflow id.</returns>
+        private Task<WorkflowExecutionContext> StartNew(
+            Type payloadType,
+            object payload,
+            ExecutionContext parentExecutionContext, 
+            IReadOnlyDictionary<string, string> eventMap)
+        {
+            var workflowExecutionContext = new WorkflowExecutionContext
+            {
+                ExecutionId = parentExecutionContext.WorkflowExecutionContext.ExecutionId,
+                WorkflowName = this.WorkflowDefinition.Name,
+                WorkflowVersion = this.WorkflowDefinition.Version,
+                PartitionKey = parentExecutionContext.WorkflowExecutionContext.PartitionKey,
+                WorkflowStartDateTime = this.Engine.TimeProvider.UtcNow,
+                WorkflowExpireDateTime = this.Engine.TimeProvider.UtcNow + this.WorkflowDefinition.MaxExecuteDuration,
+                WorkflowId = Guid.NewGuid(),
+                Options = parentExecutionContext.WorkflowExecutionContext.Options,
+                CallbackInfo = new WorkflowCallbackInfo
+                {
+                    ActivityExecutionId = parentExecutionContext.ActivityExecutionId,
+                    EventMap = new Dictionary<string, string>(eventMap),
+                }
+            };
+
+            return StartNew(payloadType, payload, workflowExecutionContext);
+        }
+
+        /// <summary>
+        /// Start new workflow.
+        /// </summary>
+        /// <param name="payloadType">Type of the start event payload.</param>
+        /// <param name="payload">The payload of the start event.</param>
+        /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
+        /// <returns>The workflow id.</returns>
+        private async Task<WorkflowExecutionContext> StartNew(
+            Type payloadType,
+            object payload,
+            WorkflowExecutionContext workflowExecutionContext)
+        {
+            var triggerEventDefinition = this.WorkflowDefinition.TriggerEvent;
+            if (triggerEventDefinition.PayloadType != payloadType)
             {
                 throw new InvalidOperationException(
-                    $"The payload type {payloadType} doesn't match start event payload type {triggerEvent.PayloadType}");
+                    $"The payload type {payloadType} doesn't match start event payload type {triggerEventDefinition.PayloadType}");
             }
 
             var startEventMessage = new EventMessage
@@ -142,7 +205,7 @@ namespace EventDrivenWorkflow.Runtime
                 EventModel = new EventModel
                 {
                     Id = Guid.NewGuid(),
-                    Name = triggerEvent.Name,
+                    Name = triggerEventDefinition.Name,
                     SourceEngineId = this.Engine.Id,
                     DelayDuration = TimeSpan.Zero,
                     Payload = payloadType == null ? null : new Payload
@@ -163,88 +226,14 @@ namespace EventDrivenWorkflow.Runtime
             //{
             //    var trackWorkflowTimeoutMessage = new ControlMessage
             //    {
-            //        Value = new ControlModel
-            //        {
-            //            Operation = ControlOperation.WorkflowTimeout,
-            //        },
-            //        WorkflowExecutionContext = workflowExecutionContext,
+            //        Operation = ControlOperation.WorkflowTimeout,
+            //        WorkflowName = workflowExecutionContext.WorkflowName
             //    };
 
             //    await this.Engine.ControlMessageSender.Send(trackWorkflowTimeoutMessage);
             //}
 
             return workflowExecutionContext;
-        }
-
-        /// <summary>
-        /// Start new workflow.
-        /// </summary>
-        /// <param name="payloadType">Type of the start event payload.</param>
-        /// <param name="payload">The payload of the start event.</param>
-        /// <param name="partitionKey">The partition key of the workflow.</param>
-        /// <param name="options">The workflow execution options.</param>
-        /// <returns>The workflow id.</returns>
-        private async Task<Guid> StartNew(
-            Type payloadType,
-            object payload,
-            ExecutionContext parentExecutionContext)
-        {
-            Guid workflowId = Guid.NewGuid();
-            var options = parentExecutionContext.WorkflowExecutionContext.Options;
-            var partitionKey = parentExecutionContext.WorkflowExecutionContext.PartitionKey;
-
-            var workflowExecutionContext = new WorkflowExecutionContext
-            {
-                WorkflowName = this.WorkflowDefinition.Name,
-                WorkflowVersion = this.WorkflowDefinition.Version,
-                PartitionKey = partitionKey,
-                WorkflowStartDateTime = this.Engine.TimeProvider.UtcNow,
-                WorkflowExpireDateTime = this.Engine.TimeProvider.UtcNow + this.WorkflowDefinition.MaxExecuteDuration,
-                WorkflowId = workflowId,
-                Options = options,
-            };
-
-            var triggerEvent = this.WorkflowDefinition.TriggerEvent;
-            if (triggerEvent.PayloadType != payloadType)
-            {
-                throw new InvalidOperationException(
-                    $"The payload type {payloadType} doesn't match start event payload type {triggerEvent.PayloadType}");
-            }
-
-            var startEventMessage = new EventMessage
-            {
-                EventModel = new EventModel
-                {
-                    Id = Guid.NewGuid(),
-                    Name = triggerEvent.Name,
-                    SourceEngineId = this.Engine.Id,
-                    DelayDuration = TimeSpan.Zero,
-                    Payload = payloadType == null ? null : new Payload
-                    {
-                        TypeName = payloadType.FullName,
-                        Body = payload == null ? null : this.Engine.Serializer.Serialize(payload),
-                    }
-                },
-                WorkflowExecutionContext = workflowExecutionContext,
-            };
-
-            // Queue the start event message to trigger the start activity.
-            await this.Engine.EventMessageSender.Send(startEventMessage);
-
-            await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
-
-            if (options.TrackProgress)
-            {
-                var trackWorkflowTimeoutMessage = new ControlMessage
-                {
-                    Operation = ControlOperation.WorkflowTimeout,
-                    WorkflowName = workflowExecutionContext.WorkflowName
-                };
-
-                await this.Engine.ControlMessageSender.Send(trackWorkflowTimeoutMessage);
-            }
-
-            return workflowId;
         }
 
         /// <summary>

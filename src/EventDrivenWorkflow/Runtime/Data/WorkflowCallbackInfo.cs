@@ -23,6 +23,6 @@ namespace EventDrivenWorkflow.Runtime.Data
         /// Gets a dictionary contains the complete event name to parent output event name map.
         /// Note, the event pair both share the same payload type.
         /// </summary>
-        public IReadOnlyDictionary<string, string> EventMap { get; init; }
+        public Dictionary<string, string> EventMap { get; init; }
     }
 }
