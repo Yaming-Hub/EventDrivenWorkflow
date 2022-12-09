@@ -7,3 +7,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("EventDrivenWorkflow.UnitTests")]
+[assembly: InternalsVisibleTo("EventDrivenWorkflow.IntegrationTests")]

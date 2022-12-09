@@ -213,14 +213,23 @@ namespace EventDrivenWorkflow.Runtime
                     $"The payload type {payloadType} doesn't match start event payload type {triggerEventDefinition.PayloadType}");
             }
 
+            var @event = new Event
+            {
+                Id = Guid.NewGuid(),
+                Name = triggerEventDefinition.Name,
+                DelayDuration = TimeSpan.Zero,
+                Value = payload,
+                SourceEngineId = this.Engine.Id,
+            };
+
             var startEventMessage = new EventMessage
             {
                 EventModel = new EventModel
                 {
-                    Id = Guid.NewGuid(),
-                    Name = triggerEventDefinition.Name,
-                    SourceEngineId = this.Engine.Id,
-                    DelayDuration = TimeSpan.Zero,
+                    Id = @event.Id,
+                    Name = @event.Name,
+                    SourceEngineId = @event.SourceEngineId,
+                    DelayDuration = @event.DelayDuration,
                     Payload = payloadType == null ? null : new Payload
                     {
                         TypeName = payloadType.FullName,
@@ -232,6 +241,8 @@ namespace EventDrivenWorkflow.Runtime
 
             // Queue the start event message to trigger the start activity.
             await this.Engine.EventMessageSender.Send(startEventMessage);
+
+            await this.Engine.Observer.EventPublished(workflowExecutionContext, activityExecutionContext: null, @event);
 
             await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
 

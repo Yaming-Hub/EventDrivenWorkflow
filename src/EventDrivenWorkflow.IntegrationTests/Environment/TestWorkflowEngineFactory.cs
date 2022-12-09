@@ -11,6 +11,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
     using EventDrivenWorkflow.Runtime.IntegrationTests;
     using EventDrivenWorkflow.Runtime.Data;
     using EventDrivenWorkflow.Runtime;
+    using EventDrivenWorkflow.Diagnostics;
 
     public class TestWorkflowEngineFactory
     {
@@ -27,6 +28,11 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             eventQueue.AddProcessor(eventMessageProcessor);
             controlQueue.AddProcessor(controlMessageProcessor);
 
+            var observer = new PipelineWorkflowObserver(
+                new TraceWorkflowObserver(),
+                new CompletenessWorkflowObserver(taskCompletionSource: null)
+            );
+
             var engine = new WorkflowEngine(
                 id: "test",
                 eventMessageProcessor: eventMessageProcessor,
@@ -38,7 +44,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
                 eventPresenceStore: eventPresenceStore,
                 activityExecutionContextStore: activityExecutionContextStore,
                 serializer: new TestJsonSerializer(),
-                observer: new TraceWorkflowObserver());
+                observer: observer);
 
             return engine;
         }

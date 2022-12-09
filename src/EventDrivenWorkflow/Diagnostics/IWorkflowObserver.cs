@@ -18,7 +18,7 @@ namespace EventDrivenWorkflow.Diagnostics
 
         Task ActivityCompleted(QualifiedExecutionContext context, IEnumerable<Event> outputEvents);
 
-        Task EventPublished(QualifiedExecutionContext context, Event @event);
+        Task EventPublished(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, Event @event);
 
         Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents);
 

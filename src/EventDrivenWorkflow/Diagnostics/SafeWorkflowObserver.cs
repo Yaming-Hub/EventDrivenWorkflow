@@ -6,6 +6,7 @@
 
 namespace EventDrivenWorkflow.Diagnostics
 {
+    using System.Diagnostics;
     using EventDrivenWorkflow.Runtime.Data;
 
     internal sealed class SafeWorkflowObserver : IWorkflowObserver
@@ -37,9 +38,9 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.EventAccepted(context, @event));
         }
 
-        public Task EventPublished(QualifiedExecutionContext context, Event @event)
+        public Task EventPublished(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, Event @event)
         {
-            return IgnoreException(() => observer.EventPublished(context, @event));
+            return IgnoreException(() => observer.EventPublished(workflowExecutionContext, activityExecutionContext, @event));
         }
 
         public Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents)
@@ -73,10 +74,11 @@ namespace EventDrivenWorkflow.Diagnostics
             {
                 await observerAction();
             }
-            catch
+            catch (Exception e)
             {
                 // The workflow orchestration should not be impacted by observer behaviors
                 // so here exception thrown from observer action will be ignored.
+                Debug.WriteLine(e.ToString());
             }
         }
     }

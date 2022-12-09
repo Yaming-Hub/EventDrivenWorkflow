@@ -85,6 +85,17 @@ namespace EventDrivenWorkflow.Utilities
                 resourceId: null);
         }
 
+        public static string GetEventKey(this Event @event, WorkflowExecutionContext workflowExecutionContext)
+        {
+            return GetEventKey(
+                partitionKey: workflowExecutionContext.PartitionKey,
+                executionId: workflowExecutionContext.ExecutionId,
+                workflowName: workflowExecutionContext.WorkflowName,
+                workflowId: workflowExecutionContext.WorkflowId,
+                eventName: @event.Name,
+                eventId: @event.Id);
+        }
+
         public static string GetEventKey(
             string partitionKey,
             Guid executionId,

@@ -8,6 +8,7 @@ namespace EventDrivenWorkflow.Runtime
 {
     using System.Text;
     using EventDrivenWorkflow.Definitions;
+    using EventDrivenWorkflow.Diagnostics;
     using EventDrivenWorkflow.Runtime.Data;
     using EventDrivenWorkflow.Utilities;
 

@@ -32,9 +32,10 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"ActivityCompleted  Activity={context.GetPath()} Events={string.Join(",", outputEvents.Select(x => x.Name))}");
         }
 
-        public Task EventPublished(QualifiedExecutionContext context, Event @event)
+        public Task EventPublished(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, Event @event)
         {
-            return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
+            string activityInfo = $"{activityExecutionContext?.ActivityName}/{activityExecutionContext?.ActivityId}";
+            return Log($"EventAccepted      Workflow={workflowExecutionContext.GetPath()} Activity={activityInfo} Event={@event.Name}");
         }
 
         public Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents)

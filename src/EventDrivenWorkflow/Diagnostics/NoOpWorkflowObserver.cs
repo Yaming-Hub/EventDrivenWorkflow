@@ -29,7 +29,7 @@ namespace EventDrivenWorkflow.Diagnostics
         {
             return Task.CompletedTask;
         }
-        public Task EventPublished(QualifiedExecutionContext context, Event @event)
+        public Task EventPublished(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, Event @event)
         {
             return Task.CompletedTask;
         }
