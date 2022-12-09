@@ -64,11 +64,11 @@ namespace EventDrivenWorkflow.Runtime
             return this.GetEvent(eventName, payloadType: null);
         }
 
-        /// <inheritdoc/>
-        public Event<T> GetEvent<T>(string eventName)
-        {
-            return (Event<T>)this.GetEvent(eventName, typeof(T));
-        }
+        ///// <inheritdoc/>
+        //public Event<T> GetEvent<T>(string eventName)
+        //{
+        //    return (Event<T>)this.GetEvent(eventName, typeof(T));
+        //}
 
         /// <inheritdoc/>
         public void PublishEvent(string eventName)
@@ -79,7 +79,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <inheritdoc/>
         public void PublishEvent(string eventName, TimeSpan delayDuration)
         {
-            this.ValidateOutputEvent(eventName, payloadType: null);
+            this.ValidateOutputEvent(eventName, payloadType: null, payload: null);
 
             var @event = new Event
             {
@@ -93,19 +93,19 @@ namespace EventDrivenWorkflow.Runtime
         }
 
         /// <inheritdoc/>
-        public void PublishEvent<T>(string eventName, T payload)
+        public void PublishEvent(string eventName, object payload)
         {
 
-            this.PublishEvent<T>(eventName, payload, delayDuration: TimeSpan.Zero);
+            this.PublishEvent(eventName, payload, delayDuration: TimeSpan.Zero);
         }
 
 
         /// <inheritdoc/>
-        public void PublishEvent<T>(string eventName, T payload, TimeSpan delayDuration)
+        public void PublishEvent(string eventName, object payload, TimeSpan delayDuration)
         {
-            this.ValidateOutputEvent(eventName, payloadType: typeof(T));
+            this.ValidateOutputEvent(eventName, payloadType: payload?.GetType(), payload: payload);
 
-            var @event = new Event<T>
+            var @event = new Event
             {
                 Id = Guid.NewGuid(),
                 Name = eventName,
@@ -150,8 +150,7 @@ namespace EventDrivenWorkflow.Runtime
             return @event;
         }
 
-
-        private void ValidateOutputEvent(string eventName, Type payloadType)
+        private void ValidateOutputEvent(string eventName, Type payloadType, object payload)
         {
             if (string.IsNullOrEmpty(eventName))
             {

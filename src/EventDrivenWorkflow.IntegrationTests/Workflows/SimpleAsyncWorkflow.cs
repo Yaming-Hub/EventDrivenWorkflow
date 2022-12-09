@@ -15,7 +15,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
 
     public static class SimpleAsyncWorkflow
     {
-        public static (WorkflowDefinition, IExecutableFactory) Build(TaskCompletionSource<QualifiedExecutionId> taskCompletionSource)
+        public static (WorkflowDefinition, IExecutableFactory) Build(TaskCompletionSource<QualifiedActivityExecutionId> taskCompletionSource)
         {
             var builder = new WorkflowBuilder("SimpleAsyncWorkflow");
             builder.RegisterEvent("e0");
@@ -27,9 +27,9 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
 
         private class ExecutableFactory : IExecutableFactory
         {
-            private readonly TaskCompletionSource<QualifiedExecutionId> taskCompletionSource;
+            private readonly TaskCompletionSource<QualifiedActivityExecutionId> taskCompletionSource;
 
-            public ExecutableFactory(TaskCompletionSource<QualifiedExecutionId> taskCompletionSource)
+            public ExecutableFactory(TaskCompletionSource<QualifiedActivityExecutionId> taskCompletionSource)
             {
                 this.taskCompletionSource = taskCompletionSource;
             }
@@ -58,9 +58,9 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
 
             private class AsyncExecutable : IAsyncExecutable
             {
-                private readonly TaskCompletionSource<QualifiedExecutionId> taskCompletionSource;
+                private readonly TaskCompletionSource<QualifiedActivityExecutionId> taskCompletionSource;
 
-                public AsyncExecutable(TaskCompletionSource<QualifiedExecutionId> taskCompletionSource)
+                public AsyncExecutable(TaskCompletionSource<QualifiedActivityExecutionId> taskCompletionSource)
                 {
                     this.taskCompletionSource = taskCompletionSource;
                 }
@@ -70,7 +70,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
                    IEventRetriever eventRetriever)
                 {
                     Trace.WriteLine($"[AsyncExecutable.BeginExecute] Path={context.GetPath()}");
-                    this.taskCompletionSource.SetResult(context.QualifiedExecutionId);
+                    this.taskCompletionSource.SetResult(context.ActivityExecutionId);
 
                     return Task.CompletedTask;
                 }

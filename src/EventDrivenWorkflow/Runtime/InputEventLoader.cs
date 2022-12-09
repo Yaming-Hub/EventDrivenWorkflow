@@ -58,12 +58,14 @@ namespace EventDrivenWorkflow.Runtime
             // are available.
             var activityKey = ResourceKeyFormat.GetActivityKey(
                 partitionKey: workflowExecutionContext.PartitionKey,
+                executionId: workflowExecutionContext.ExecutionId,
                 workflowName: workflowExecutionContext.WorkflowName,
                 workflowId: workflowExecutionContext.WorkflowId,
                 activityName: activityDefinition.Name);
 
             var eventKey = ResourceKeyFormat.GetEventKey(
                 partitionKey: workflowExecutionContext.PartitionKey,
+                executionId: workflowExecutionContext.ExecutionId,
                 workflowName: workflowExecutionContext.WorkflowName,
                 workflowId: workflowExecutionContext.WorkflowId,
                 eventName: triggerEvent.Name);
@@ -127,6 +129,7 @@ namespace EventDrivenWorkflow.Runtime
                     .Where(n => n != triggerEvent.Name)
                     .Select(n => ResourceKeyFormat.GetEventKey(
                         partitionKey: workflowExecutionContext.PartitionKey,
+                        executionId: workflowExecutionContext.ExecutionId,
                         workflowName: workflowExecutionContext.WorkflowName,
                         workflowId: workflowExecutionContext.WorkflowId,
                         eventName: n))

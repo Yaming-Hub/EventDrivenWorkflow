@@ -159,7 +159,7 @@ namespace EventDrivenWorkflow.Definitions
                     }
 
                     sb.Append("/");
-                    if (link.Target != null)
+                    if (link.Target != null && !link.Target.IsCompleteActivity)
                     {
                         sb.Append(link.Target.Name);
                     }

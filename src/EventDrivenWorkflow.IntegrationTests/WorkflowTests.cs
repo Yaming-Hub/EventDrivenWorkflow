@@ -58,7 +58,7 @@ namespace Core.IntegrationTests
         [TestMethod]
         public async Task TestSimpleAsyncWorkflow()
         {
-            var source = new TaskCompletionSource<QualifiedExecutionId>();
+            var source = new TaskCompletionSource<QualifiedActivityExecutionId>();
             var (wd, af) = SimpleAsyncWorkflow.Build(source);
 
             var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
@@ -67,7 +67,7 @@ namespace Core.IntegrationTests
             await orchestrator.StartNew();
 
             var qeid = await source.Task;
-            await orchestrator.EndExecute(qeid, (c, p) => { p.PublishEvent<string>("result", "the-async-result"); });
+            await orchestrator.EndExecute(qeid, (c, p) => { p.PublishEvent("result", "the-async-result"); });
 
             await Task.Delay(TimeSpan.FromSeconds(3));
 

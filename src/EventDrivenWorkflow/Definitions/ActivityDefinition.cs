@@ -12,6 +12,11 @@ namespace EventDrivenWorkflow.Definitions
     public sealed class ActivityDefinition
     {
         /// <summary>
+        /// The virtual complete activity name.
+        /// </summary>
+        internal const string CompleteActivityName = "Complete-df4b46df-829b-4708-ba00-ceb42a4cfa73";
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ActivityDefinition"/> class.
         /// </summary>
         internal ActivityDefinition()
@@ -51,15 +56,8 @@ namespace EventDrivenWorkflow.Definitions
         public TimeSpan MaxExecuteDuration { get; init; }
 
         /// <summary>
-        /// Gets a value indicates whether the activity is an initializing activity. One
-        /// workflow has only one initializing activity.
+        /// Gets a bool value indicates whether the activity is the auto-generated complete activity.
         /// </summary>
-        public bool IsInitializing => InputEventDefinitions.Count == 0;
-
-        /// <summary>
-        /// Gets a value indicates whether the activity is an terminating activity. One
-        /// workflow will have one or more terminating activities.
-        /// </summary>
-        public bool IsTerminating => OutputEventDefinitions.Count == 0;
+        public bool IsCompleteActivity => this.Name == CompleteActivityName;
     }
 }

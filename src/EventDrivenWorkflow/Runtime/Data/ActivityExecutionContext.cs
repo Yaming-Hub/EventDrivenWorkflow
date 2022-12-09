@@ -19,7 +19,7 @@ namespace EventDrivenWorkflow.Runtime.Data
         /// <summary>
         /// Gets the execution id of the activity.
         /// </summary>
-        public Guid ActivityExecutionId { get; init; }
+        public Guid ActivityId { get; init; }
 
         /// <summary>
         /// Gets the start time of the execution.
@@ -40,7 +40,7 @@ namespace EventDrivenWorkflow.Runtime.Data
         //    PartitionKey = PartitionKey,
         //    WorkflowName = WorkflowName,
         //    ActivityName = ActivityName,
-        //    ExecutionId = ActivityExecutionId
+        //    ExecutionId = ExecutionId
         //};
     }
 }

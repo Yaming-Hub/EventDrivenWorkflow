@@ -18,13 +18,5 @@ namespace EventDrivenWorkflow
         /// <param name="eventName">The event name.</param>
         /// <returns>The event.</returns>
         Event GetEvent(string eventName);
-
-        /// <summary>
-        /// Gets event by name.
-        /// </summary>
-        /// <typeparam name="T">Type of the payload.</typeparam>
-        /// <param name="eventName">The event name.</param>
-        /// <returns>The event.</returns>
-        Event<T> GetEvent<T>(string eventName);
     }
 }

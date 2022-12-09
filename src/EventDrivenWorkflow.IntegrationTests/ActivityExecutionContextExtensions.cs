@@ -9,7 +9,7 @@ namespace EventDrivenWorkflow.IntegrationTests
     {
         public static string GetPath(this ExecutionContext context)
         {
-            return context.QualifiedExecutionId.ToString();
+            return context.ActivityExecutionId.ToString();
         }
 
         public static string GetPath(this WorkflowExecutionContext context)

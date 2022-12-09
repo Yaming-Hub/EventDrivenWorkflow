@@ -204,8 +204,7 @@ namespace EventDrivenWorkflow.UnitTests.Builder
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidWorkflowException))]
-        public void BuildWorkflowWitMoreThanOneCompleteEventWillThrow()
+        public void BuildWorkflowWitMoreThanOneComplete()
         {
             var wb = new WorkflowBuilder("Test");
             wb.RegisterEvent("e1");
@@ -213,7 +212,10 @@ namespace EventDrivenWorkflow.UnitTests.Builder
             wb.RegisterEvent("e3");
             wb.AddActivity("a1").Subscribe("e1").Publish("e2").Publish("e3");
 
-            wb.Build();
+            var wd = wb.Build();
+
+            Assert.AreEqual("/e1/a1,a1/e2/,a1/e3/", wd.GetSignature(out bool _));
+            Trace.WriteLine(GraphGenerator.GenerateText(wd));
         }
 
         [TestMethod]

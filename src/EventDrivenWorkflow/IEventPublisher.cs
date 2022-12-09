@@ -4,6 +4,8 @@
 // </copyright>
 // -------------------------------------------------------------------------------------------------------------------
 
+using EventDrivenWorkflow.Runtime.Data;
+
 namespace EventDrivenWorkflow
 {
     /// <summary>
@@ -30,7 +32,7 @@ namespace EventDrivenWorkflow
         /// <typeparam name="T">Type of the payload.</typeparam>
         /// <param name="eventName">The event name.</param>
         /// <param name="payload">The event payload.</param>
-        void PublishEvent<T>(string eventName, T payload);
+        void PublishEvent(string eventName, object payload);
 
         /// <summary>
         /// Publish output event with payload.
@@ -39,6 +41,7 @@ namespace EventDrivenWorkflow
         /// <param name="eventName">The event name.</param>
         /// <param name="payload">The event payload.</param>
         /// <param name="delayDuration">After how long the event will be published.</param>
-        void PublishEvent<T>(string eventName, T payload, TimeSpan delayDuration);
+        void PublishEvent(string eventName, object payload, TimeSpan delayDuration);
+
     }
 }

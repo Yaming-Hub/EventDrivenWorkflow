@@ -74,12 +74,19 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                 throw new WorkflowRuntimeException(
                     isTransient: false,
                     $"Event {message.Value.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] payload type " +
-                    $"{message.Value.Payload.TypeName ?? "<null>"} doesn't match event definition {eventDefinition.PayloadType.GetDisplayName()} " +
+                    $"{message.Value.Payload?.TypeName ?? "<null>"} doesn't match event definition {eventDefinition.PayloadType.GetDisplayName()} " +
                     $"of workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
             }
 
             // Find the activity that subscribe to the current event.
-            var activityDefinition = workflowDefinition.EventToConsumerActivityMap[message.Value.Name];
+            if (!workflowDefinition.EventToConsumerActivityMap.TryGetValue(message.Value.Name, out var activityDefinition))
+            {
+                // This could happen if the workflow definition has changed.
+                throw new WorkflowRuntimeException(
+                    isTransient: false,
+                    $"There is no action subscribe to event {message.Value.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] " +
+                    $" in workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
+            }
 
             // Try to load all input event for the activity.
             var inputEvents = new Dictionary<string, Event>(capacity: activityDefinition.InputEventDefinitions.Count);
@@ -110,6 +117,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                     partitionKey: partitionKey,
                     key: ResourceKeyFormat.GetEventKey(
                         partitionKey: context.WorkflowExecutionContext.PartitionKey,
+                        executionId: context.WorkflowExecutionContext.ExecutionId,
                         workflowName: context.WorkflowExecutionContext.WorkflowName,
                         workflowId: context.WorkflowExecutionContext.WorkflowId,
                         eventName: message.Value.Name,

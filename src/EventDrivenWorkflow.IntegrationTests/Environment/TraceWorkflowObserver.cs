@@ -37,7 +37,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
         }
 
-        public Task WorkflowCompleted(WorkflowExecutionContext context)
+        public Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents)
         {
             return Log($"WorkflowCompleted  Workflow={context.GetPath()}");
         }

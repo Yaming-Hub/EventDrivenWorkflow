@@ -42,9 +42,9 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.EventPublished(context, @event));
         }
 
-        public Task WorkflowCompleted(WorkflowExecutionContext context)
+        public Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents)
         {
-            return IgnoreException(() => observer.WorkflowCompleted(context));
+            return IgnoreException(() => observer.WorkflowCompleted(context, outputEvents));
         }
 
         public Task HandleEventMessageFailed(Exception context, Message<EventModel> eventMessage)

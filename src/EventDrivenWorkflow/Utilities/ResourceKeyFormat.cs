@@ -16,7 +16,9 @@ namespace EventDrivenWorkflow.Utilities
         /// <summary>
         /// The qualified id pattern.
         /// </summary>
-        private static readonly string QualifiedExecutionIdPattern = @"^(\[(?<partition>[a-z][a-z0-9_\-]*)\])?" +
+        private static readonly string QualifiedExecutionIdPattern = 
+            @"^(\[(?<partition>[a-z][a-z0-9_\-]*)\])?" +
+            $"(?<executeId>{GuidPattern}):" +
             @"(?<workflow>[a-z][a-z0-9_\-]*)" +
             $"/(?<workflowId>{GuidPattern})" +
             @"/activities/(?<activity>[a-z][a-z0-9_\-]*)" +
@@ -25,25 +27,27 @@ namespace EventDrivenWorkflow.Utilities
         private static readonly Regex QualifiedExecutionIdRegex =
             new Regex(pattern: QualifiedExecutionIdPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        public static bool TryParse(string str, out QualifiedExecutionId qualifiedExecutionId)
+        public static bool TryParse(string str, out QualifiedActivityExecutionId qualifiedExecutionId)
         {
             var match = QualifiedExecutionIdRegex.Match(str);
             if (match.Success)
             {
                 var partitionGroup = match.Groups["partition"];
                 var partition = partitionGroup.Success ? partitionGroup.Value : null;
+                var executeId = match.Groups["executeId"].Value;
                 var workflow = match.Groups["workflow"].Value;
                 var workflowId = match.Groups["workflowId"].Value;
                 var activity = match.Groups["activity"].Value;
                 var id = match.Groups["id"].Value;
 
-                qualifiedExecutionId = new QualifiedExecutionId
+                qualifiedExecutionId = new QualifiedActivityExecutionId
                 {
                     PartitionKey = partition,
+                    ExecutionId = Guid.Parse(executeId),
                     WorkflowName = workflow,
                     WorkflowId = Guid.Parse(workflowId),
                     ActivityName = activity,
-                    ActivityExecutionId = Guid.Parse(id)
+                    ActivityId = Guid.Parse(id)
                 };
                 return true;
             }
@@ -52,25 +56,28 @@ namespace EventDrivenWorkflow.Utilities
             return false;
         }
 
-        public static string GetPath(this QualifiedExecutionId qualifiedExecutionId)
+        public static string GetPath(this QualifiedActivityExecutionId qualifiedExecutionId)
         {
             return GetResourceKey(
                 partitionKey: qualifiedExecutionId.PartitionKey,
+                executionId: qualifiedExecutionId.ExecutionId,
                 workflowName: qualifiedExecutionId.WorkflowName,
                 workflowId: qualifiedExecutionId.WorkflowId,
                 resourceType: "activities",
                 resourceName: qualifiedExecutionId.ActivityName,
-                resourceId: qualifiedExecutionId.ActivityExecutionId);
+                resourceId: qualifiedExecutionId.ActivityId);
         }
 
         public static string GetActivityKey(
             string partitionKey,
+            Guid executionId,
             string workflowName,
             Guid workflowId,
             string activityName)
         {
             return GetResourceKey(
                 partitionKey: partitionKey,
+                executionId: executionId,
                 workflowName: workflowName,
                 workflowId: workflowId,
                 resourceType: "activities",
@@ -80,6 +87,7 @@ namespace EventDrivenWorkflow.Utilities
 
         public static string GetEventKey(
             string partitionKey,
+            Guid executionId,
             string workflowName,
             Guid workflowId,
             string eventName,
@@ -87,6 +95,7 @@ namespace EventDrivenWorkflow.Utilities
         {
             return GetResourceKey(
                 partitionKey: partitionKey,
+                executionId: executionId,
                 workflowName: workflowName,
                 workflowId: workflowId,
                 resourceType: "events",
@@ -98,6 +107,7 @@ namespace EventDrivenWorkflow.Utilities
         {
             return GetResourceKey(
                 partitionKey: workflowExecutionContext.PartitionKey,
+                executionId: workflowExecutionContext.ExecutionId,
                 workflowName: workflowExecutionContext.WorkflowName,
                 workflowId: workflowExecutionContext.WorkflowId,
                 resourceType: null,
@@ -107,13 +117,14 @@ namespace EventDrivenWorkflow.Utilities
 
         private static string GetResourceKey(
             string partitionKey,
+            Guid executionId,
             string workflowName,
             Guid workflowId,
             string resourceType,
             string resourceName,
             Guid? resourceId)
         {
-            // [{partitionKey}]{workflowName}/{workflowId}/{resourceType}/{resourceName}/{resourceId}
+            // [{partitionKey}]{executionId}:{workflowName}/{workflowId}/{resourceType}/{resourceName}/{resourceId}
             // For example:
             // [pk1]wf1/7fbc8f67-0577-430f-a1e5-f781bf299d20/activities/a1/dff2e5b4-e0bc-4053-8f06-48a722f8f7cd
             var length = string.IsNullOrEmpty(partitionKey) ? 0 : partitionKey.Length + 2;
@@ -139,6 +150,8 @@ namespace EventDrivenWorkflow.Utilities
             {
                 sb.Append("[").Append(partitionKey).Append("]");
             }
+
+            sb.Append(executionId).Append(":");
 
             sb.Append(workflowName);
             sb.Append("/").Append(workflowId);

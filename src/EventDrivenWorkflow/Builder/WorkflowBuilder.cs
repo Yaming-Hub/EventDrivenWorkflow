@@ -99,8 +99,9 @@ namespace EventDrivenWorkflow.Builder
             // TODO: Workflow may have an optional complete event.
 
             var workflowDefinition = this.Build(null, new Dictionary<string, EventDefinition>());
+            Dictionary<string, ActivityDefinition> activityDefinitions = new Dictionary<string, ActivityDefinition>(workflowDefinition.ActivityDefinitions);
 
-            if (workflowDefinition.ActivityDefinitions.Count == 0)
+            if (activityDefinitions.Count == 0)
             {
                 throw new InvalidWorkflowException($"There is no activity defined in workflow {this.Name}.");
             }
@@ -108,7 +109,7 @@ namespace EventDrivenWorkflow.Builder
             // Build event to consumer activity and event to producer activities map.
             var eventToConsumerActivityMap = new Dictionary<string, ActivityDefinition>(workflowDefinition.EventDefinitions.Count);
             var eventToProducerActivitiesMap = new Dictionary<string, List<ActivityDefinition>>(workflowDefinition.EventDefinitions.Count);
-            foreach (var activityDefinition in workflowDefinition.ActivityDefinitions.Values)
+            foreach (var activityDefinition in activityDefinitions.Values)
             {
                 if (activityDefinition.InputEventDefinitions.Count == 0)
                 {
@@ -170,28 +171,35 @@ namespace EventDrivenWorkflow.Builder
             var triggerEvent = triggerEvents[0];
 
             // Find the optional complete event.
-            EventDefinition completeEvent = null;
-            if (eventToConsumerActivityMap.Count < workflowDefinition.EventDefinitions.Count)
-            {
-                var eventsWithoutSubscribedActivity = workflowDefinition.EventDefinitions.Values
-                    .Where(e => !eventToConsumerActivityMap.ContainsKey(e.Name))
-                    .ToList();
+            List<EventDefinition> completeEvents = workflowDefinition.EventDefinitions.Values
+                .Where(e => !eventToConsumerActivityMap.ContainsKey(e.Name))
+                .ToList();
 
-                if (eventsWithoutSubscribedActivity.Count > 1)
+            // Create a virtual complete activity which subscribes to all complete events
+            // Add the complete event to the workflow graph.
+            if (completeEvents.Count > 0)
+            {
+                var completeActivity = new ActivityDefinition
                 {
-                    var missingEvents = eventsWithoutSubscribedActivity.Select(e => e.Name).ToList();
-                    throw new InvalidWorkflowException($"There are more than one events not be subscribed: {string.Join(",", missingEvents)}");
-                }
-                else if (eventsWithoutSubscribedActivity.Count == 1)
+                    Name = ActivityDefinition.CompleteActivityName,
+                    InputEventDefinitions = completeEvents.ToDictionary(x => x.Name, x => x),
+                    OutputEventDefinitions = new Dictionary<string, EventDefinition>(),
+                    IsAsync = false,
+                    MaxExecuteDuration = TimeSpan.FromSeconds(30),
+                    RetryPolicy = RetryPolicy.DoNotRetry,
+                };
+
+                activityDefinitions.Add(completeActivity.Name, completeActivity);
+                foreach(var completeEvent in completeEvents)
                 {
-                    completeEvent = eventsWithoutSubscribedActivity[0];
+                    eventToConsumerActivityMap.Add(completeEvent.Name, completeActivity);
                 }
             }
 
             // Find the start activity.
             // There are 2 cases how start activity can be defined. One is the start activity do not have any input event.
             // The other is the start activity depends on one single input event without publisher
-            var candidateStartActivities = workflowDefinition.ActivityDefinitions.Values
+            var candidateStartActivities = activityDefinitions.Values
                 .Where(a => a.InputEventDefinitions.Count == 0)
                 .ToList();
 
@@ -210,9 +218,9 @@ namespace EventDrivenWorkflow.Builder
                 Name = workflowDefinition.Name,
                 Version = version,
                 EventDefinitions = workflowDefinition.EventDefinitions,
-                ActivityDefinitions = workflowDefinition.ActivityDefinitions,
+                ActivityDefinitions = activityDefinitions,
                 TriggerEvent = triggerEvents[0],
-                CompleteEvent = completeEvent,
+                CompleteEvents = completeEvents,
                 MaxExecuteDuration = this.maxExecuteDuration,
                 EventToConsumerActivityMap = eventToConsumerActivityMap,
             };

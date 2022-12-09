@@ -12,6 +12,21 @@ namespace EventDrivenWorkflow.Runtime.Data
     public class WorkflowExecutionContext
     {
         /// <summary>
+        /// Gets the partition key.
+        /// </summary>
+        public string PartitionKey { get; init; }
+
+        /// <summary>
+        /// Gets the execution id.
+        /// </summary>
+        public Guid ExecutionId { get; init; }
+
+        /// <summary>
+        /// Gets the workflow callback info.
+        /// </summary>
+        public WorkflowCallbackInfo CallbackInfo { get; init; }
+
+        /// <summary>
         /// Gets the workflow name.
         /// </summary>
         public string WorkflowName { get; init; }
@@ -20,11 +35,6 @@ namespace EventDrivenWorkflow.Runtime.Data
         /// Gets the workflow version.
         /// </summary>
         public string WorkflowVersion { get; init; }
-
-        /// <summary>
-        /// Gets the partition key.
-        /// </summary>
-        public string PartitionKey { get; init; }
 
         /// <summary>
         /// Gets the workflow id.

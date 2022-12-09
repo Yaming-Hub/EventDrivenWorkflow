@@ -49,9 +49,9 @@ namespace EventDrivenWorkflow.Definitions
         public EventDefinition TriggerEvent { get; init; }
 
         /// <summary>
-        /// Gets the complete event. A workflow may have zero or one complete event.
+        /// Gets a list of complete events.
         /// </summary>
-        public EventDefinition CompleteEvent { get; init; }
+        public IReadOnlyList<EventDefinition> CompleteEvents { get; init; }
 
         /// <summary>
         /// Gets a map from event to consumer activity. One event can only be subscribed by one activity.

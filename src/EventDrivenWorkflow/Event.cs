@@ -30,5 +30,7 @@ namespace EventDrivenWorkflow
         /// Gets the source engine id.
         /// </summary>
         public string SourceEngineId { get; init; }
+
+        public object Payload { get; internal set; }
     }
 }

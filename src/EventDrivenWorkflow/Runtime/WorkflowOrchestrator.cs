@@ -87,9 +87,8 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="partitionKey">The partition key of the workflow.</param>
         /// <param name="options">The workflow execution options.</param>
         /// <returns>The workflow id.</returns>
-        public Task<Guid> StartNew(string partitionKey = null, WorkflowExecutionOptions options = null)
+        public Task<WorkflowExecutionContext> StartNew(string partitionKey = null, WorkflowExecutionOptions options = null)
         {
-
             return StartNew(payloadType: null, payload: null, partitionKey: partitionKey, options: options);
         }
 
@@ -101,7 +100,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="partitionKey">The partition key of the workflow.</param>
         /// <param name="options">The workflow execution options.</param>
         /// <returns>The workflow id.</returns>
-        public Task<Guid> StartNew<T>(T payload, string partitionKey = null, WorkflowExecutionOptions options = null)
+        public Task<WorkflowExecutionContext> StartNew<T>(T payload, string partitionKey = null, WorkflowExecutionOptions options = null)
         {
             return StartNew(payloadType: typeof(T), payload: payload, partitionKey: partitionKey, options: options);
         }
@@ -114,10 +113,85 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="partitionKey">The partition key of the workflow.</param>
         /// <param name="options">The workflow execution options.</param>
         /// <returns>The workflow id.</returns>
-        private async Task<Guid> StartNew(Type payloadType, object payload, string partitionKey, WorkflowExecutionOptions options)
+        private async Task<WorkflowExecutionContext> StartNew(Type payloadType, object payload, string partitionKey, WorkflowExecutionOptions options)
+        {
+            Guid executionId = Guid.NewGuid();
+            options = options ?? WorkflowExecutionOptions.Default;
+
+            var workflowExecutionContext = new WorkflowExecutionContext
+            {
+                PartitionKey = partitionKey,
+                ExecutionId = executionId,
+                WorkflowId = Guid.NewGuid(),
+                WorkflowName = this.WorkflowDefinition.Name,
+                WorkflowVersion = this.WorkflowDefinition.Version,
+                WorkflowStartDateTime = this.Engine.TimeProvider.UtcNow,
+                WorkflowExpireDateTime = this.Engine.TimeProvider.UtcNow + this.WorkflowDefinition.MaxExecuteDuration,
+                Options = options,
+            };
+
+            var triggerEvent = this.WorkflowDefinition.TriggerEvent;
+            if (triggerEvent.PayloadType != payloadType)
+            {
+                throw new InvalidOperationException(
+                    $"The payload type {payloadType} doesn't match start event payload type {triggerEvent.PayloadType}");
+            }
+
+            var startEventMessage = new Message<EventModel>
+            {
+                Value = new EventModel
+                {
+                    Id = Guid.NewGuid(),
+                    Name = triggerEvent.Name,
+                    SourceEngineId = this.Engine.Id,
+                    DelayDuration = TimeSpan.Zero,
+                    Payload = payloadType == null ? null : new Payload
+                    {
+                        TypeName = payloadType.FullName,
+                        Body = payload == null ? null : this.Engine.Serializer.Serialize(payload),
+                    }
+                },
+                WorkflowExecutionContext = workflowExecutionContext,
+            };
+
+            // Queue the start event message to trigger the start activity.
+            await this.Engine.EventMessageSender.Send(startEventMessage);
+
+            await this.Engine.Observer.WorkflowStarted(workflowExecutionContext);
+
+            if (options.TrackProgress)
+            {
+                var trackWorkflowTimeoutMessage = new Message<ControlModel>
+                {
+                    Value = new ControlModel
+                    {
+                        Operation = ControlOperation.WorkflowTimeout,
+                    },
+                    WorkflowExecutionContext = workflowExecutionContext,
+                };
+
+                await this.Engine.ControlMessageSender.Send(trackWorkflowTimeoutMessage);
+            }
+
+            return workflowExecutionContext;
+        }
+
+        /// <summary>
+        /// Start new workflow.
+        /// </summary>
+        /// <param name="payloadType">Type of the start event payload.</param>
+        /// <param name="payload">The payload of the start event.</param>
+        /// <param name="partitionKey">The partition key of the workflow.</param>
+        /// <param name="options">The workflow execution options.</param>
+        /// <returns>The workflow id.</returns>
+        private async Task<Guid> StartNew(
+            Type payloadType,
+            object payload,
+            ExecutionContext parentExecutionContext)
         {
             Guid workflowId = Guid.NewGuid();
-            options = options ?? WorkflowExecutionOptions.Default;
+            var options = parentExecutionContext.WorkflowExecutionContext.Options;
+            var partitionKey = parentExecutionContext.WorkflowExecutionContext.PartitionKey;
 
             var workflowExecutionContext = new WorkflowExecutionContext
             {
@@ -182,23 +256,23 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="context">The activity execution context.</param>
         /// <param name="outputEvents">An array contains output events.</param>
         /// <returns>A task represents the async operation.</returns>
-        public async Task EndExecute(QualifiedExecutionId qualifiedExecutionId, Action<ExecutionContext, IEventPublisher> publishOutputEvent)
+        public async Task EndExecute(QualifiedActivityExecutionId executionId, Action<ExecutionContext, IEventPublisher> publishOutputEvent)
         {
             var workflowDefinition = this.WorkflowDefinition;
 
             ExecutionContext context = null;
-            string key = qualifiedExecutionId.ToString();
+            string key = executionId.ToString();
 
             try
             {
-                var contextEntity = await this.Engine.ActivityExecutionContextStore.Get(qualifiedExecutionId.PartitionKey, key);
+                var contextEntity = await this.Engine.ActivityExecutionContextStore.Get(executionId.PartitionKey, key);
                 context = contextEntity.Value;
             }
             catch (StoreException se) when (se.ErrorCode == StoreErrorCode.NotFound)
             {
                 throw new WorkflowRuntimeException(
                     isTransient: false,
-                    message: $"Cannot complete {qualifiedExecutionId} because the context is not found. The activity may have already completed or expired.",
+                    message: $"Cannot complete {executionId} because the context is not found. The activity may have already completed or expired.",
                     se);
             }
 
@@ -236,7 +310,7 @@ namespace EventDrivenWorkflow.Runtime
             // Delete the context. Please note, if the EndExecute() is called multiple times before the context is deleted
             // it's possible that the output events will be published multiple times. This is acceptable as the workflow 
             // guarantee at least once execution, and downstream activity could be triggered more than once.
-            await this.Engine.ActivityExecutionContextStore.Delete(qualifiedExecutionId.PartitionKey, key);
+            await this.Engine.ActivityExecutionContextStore.Delete(executionId.PartitionKey, key);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace EventDrivenWorkflow.Diagnostics
             return Task.CompletedTask;
         }
 
-        public Task WorkflowCompleted(WorkflowExecutionContext context)
+        public Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents)
         {
             return Task.CompletedTask;
         }

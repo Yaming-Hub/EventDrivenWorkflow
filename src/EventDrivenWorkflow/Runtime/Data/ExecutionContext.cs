@@ -25,12 +25,13 @@ namespace EventDrivenWorkflow.Runtime.Data
         /// Gets the qualified execution id. A qualified execution id can uniquely identity
         /// an activity execution.
         /// </summary>
-        public QualifiedExecutionId QualifiedExecutionId => new QualifiedExecutionId
+        public QualifiedActivityExecutionId ActivityExecutionId => new QualifiedActivityExecutionId
         {
             PartitionKey = this.WorkflowExecutionContext.PartitionKey,
+            ExecutionId = this.WorkflowExecutionContext.ExecutionId,
             WorkflowName = this.WorkflowExecutionContext.WorkflowName,
             ActivityName = this.ActivityExecutionContext.ActivityName,
-            ActivityExecutionId = this.ActivityExecutionContext.ActivityExecutionId
+            ActivityId = this.ActivityExecutionContext.ActivityId
         };
     }
 }

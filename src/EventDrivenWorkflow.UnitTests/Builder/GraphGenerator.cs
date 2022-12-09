@@ -62,7 +62,7 @@ namespace EventDrivenWorkflow.UnitTests.Builder
                 nodesElement.AppendChild(activityNodeElement);
             }
             
-            if (workflowDefinition.CompleteEvent != null)
+            if (workflowDefinition.CompleteEvents != null)
             {
                 var endActivityNodeElement = xmlDocument.CreateElement("Node", ns);
                 endActivityNodeElement.SetAttribute("Id", "[END]");

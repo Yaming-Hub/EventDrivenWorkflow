@@ -20,7 +20,7 @@ namespace EventDrivenWorkflow.Diagnostics
 
         Task EventPublished(ExecutionContext context, Event @event);
 
-        Task WorkflowCompleted(WorkflowExecutionContext context);
+        Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents);
 
         Task HandleEventMessageFailed(Exception exception, Message<EventModel> eventMessage);
 

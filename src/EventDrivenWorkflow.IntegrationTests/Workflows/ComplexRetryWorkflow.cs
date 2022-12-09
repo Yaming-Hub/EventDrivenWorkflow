@@ -73,7 +73,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
                    IEventPublisher eventPublisher,
                    CancellationToken cancellationToken)
                 {
-                    var message = eventRetriever.GetEvent<string>("message").Payload;
+                    var message = eventRetriever.GetEvent("message").Payload;
                     if (this.attempRemaining.Value > 0)
                     {
                         this.attempRemaining.Value--;

@@ -30,6 +30,7 @@ namespace EventDrivenWorkflow.Runtime
         /// <param name="timeProvider">The time provider.</param>
         public WorkflowEngine(
             string id,
+            IWorkflowOrchestratorProvider workflowOrchestratorProvider,
             IMessageProcessor<Message<EventModel>> eventMessageProcessor,
             IMessageProcessor<Message<ControlModel>> controlMessageProcessor,
             IMessageSender<Message<EventModel>> eventMessageSender,
@@ -43,6 +44,7 @@ namespace EventDrivenWorkflow.Runtime
             ITimeProvider timeProvider = null)
         {
             this.Id = id;
+            this.WorkflowOrchestratorProvider = workflowOrchestratorProvider;
             this.EventMessageProcessor = eventMessageProcessor;
             this.ControlMessageProcessor = controlMessageProcessor;
             this.EventMessageSender = eventMessageSender;
@@ -60,6 +62,8 @@ namespace EventDrivenWorkflow.Runtime
         /// Gets engine id.
         /// </summary>
         internal string Id { get; }
+
+        public IWorkflowOrchestratorProvider WorkflowOrchestratorProvider { get; }
 
         /// <summary>
         /// Gets the event message processor.

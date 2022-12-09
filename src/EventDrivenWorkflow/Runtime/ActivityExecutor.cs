@@ -52,7 +52,7 @@ namespace EventDrivenWorkflow.Runtime
                 {
                     ActivityName = activityDefinition.Name,
                     ActivityExecutionStartDateTime = this.orchestrator.Engine.TimeProvider.UtcNow,
-                    ActivityExecutionId = CaculateActivityExecutionId(activityDefinition.Name, inputEvents),
+                    ActivityId = CaculateActivityId(activityDefinition.Name, inputEvents),
                     AttemptCount = 0,
                     TriggerEventReference = triggerEvent == null ? null : new EventReference
                     {
@@ -65,7 +65,6 @@ namespace EventDrivenWorkflow.Runtime
             await this.Execute(context, activityDefinition, inputEvents, triggerEvent);
             return context;
         }
-
 
         /// <summary>
         /// Execute the activity.
@@ -90,7 +89,11 @@ namespace EventDrivenWorkflow.Runtime
 
             eventOperator.ValidateInputEvents();
 
-            if (activityDefinition.IsAsync)
+            if (activityDefinition.IsCompleteActivity)
+            {
+                await this.ExecuteComplete(context, inputEvents);
+            }
+            else if (activityDefinition.IsAsync)
             {
                 await this.ExecuteAsync(
                     context,
@@ -144,7 +147,7 @@ namespace EventDrivenWorkflow.Runtime
                         SourceActivity = new ActivityReference
                         {
                             Name = context.ActivityExecutionContext.ActivityName,
-                            ExecutionId = context.ActivityExecutionContext.ActivityExecutionId,
+                            ExecutionId = context.ActivityExecutionContext.ActivityId,
                         }
                     },
                     WorkflowExecutionContext = context.WorkflowExecutionContext, // Trim the activity part from context
@@ -173,6 +176,7 @@ namespace EventDrivenWorkflow.Runtime
                             partitionKey: partitionKey,
                             key: ResourceKeyFormat.GetEventKey(
                                 partitionKey: context.WorkflowExecutionContext.PartitionKey,
+                                executionId: context.WorkflowExecutionContext.ExecutionId,
                                 workflowName: context.WorkflowExecutionContext.WorkflowName,
                                 workflowId: context.WorkflowExecutionContext.WorkflowId,
                                 eventName: outputEvent.Name,
@@ -221,7 +225,7 @@ namespace EventDrivenWorkflow.Runtime
 
                     if (workflowHasCompleted)
                     {
-                        await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext);
+                        await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext, null);
                     }
                     else
                     {
@@ -348,7 +352,7 @@ namespace EventDrivenWorkflow.Runtime
             var activity = this.orchestrator.ExecutableFactory.CreateAsyncExecutable(context.ActivityExecutionContext.ActivityName);
             await this.orchestrator.Engine.ActivityExecutionContextStore.Upsert(
                 partitionKey: context.WorkflowExecutionContext.PartitionKey,
-                key: context.QualifiedExecutionId.ToString(),
+                key: context.ActivityExecutionId.ToString(),
                 new Entity<ExecutionContext>
                 {
                     Value = context,
@@ -395,6 +399,62 @@ namespace EventDrivenWorkflow.Runtime
         }
 
         /// <summary>
+        /// Execute the complete activity.
+        /// </summary>
+        /// <param name="aec">The activity execution context.</param>
+        /// <param name="eventOperator">The event operator.</param>
+        /// <returns>A task represents the async operation.</returns>
+        private async Task ExecuteComplete(
+            ExecutionContext context,
+            IReadOnlyDictionary<string, Event> inputEvents)
+        {
+            await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext, inputEvents.Select(x => x.Value));
+
+            var callbackInfo = context.WorkflowExecutionContext.CallbackInfo;
+            if (callbackInfo != null)
+            {
+                // Resume parent workflow if callback info is available.
+                var parentWorkflowName = callbackInfo.ActivityExecutionId.WorkflowName;
+                var parentOrchestrator = this.orchestrator.Engine.WorkflowOrchestratorProvider.GetWorkflowOrchestrator(parentWorkflowName);
+                if (parentOrchestrator == null)
+                {
+                    throw new WorkflowRuntimeException(isTransient: false, $"The orchestartor of workflow \"{parentWorkflowName}\"is not found.");
+                }
+
+                await parentOrchestrator.EndExecute(
+                    executionId: callbackInfo.ActivityExecutionId,
+                    publishOutputEvent: (executionContext, publisher) =>
+                    {
+                        foreach (var inputEvent in inputEvents)
+                        {
+                            if (callbackInfo.EventMap.TryGetValue(inputEvent.Key, out string outputEventName))
+                            {
+                                if (!parentOrchestrator.WorkflowDefinition.EventDefinitions.TryGetValue(outputEventName, out var outputEvent))
+                                {
+                                    throw new WorkflowRuntimeException(isTransient: false, $"The mapped output event \"{outputEventName}\" is not defined.");
+                                }
+
+                                object payload;
+                                try
+                                {
+                                    payload = inputEvent.Value.GetPayload(outputEvent.PayloadType);
+                                }
+                                catch (InvalidCastException e)
+                                {
+                                    throw new WorkflowRuntimeException(
+                                        isTransient: false,
+                                        $"The input event \"{inputEvent.Key}\" payload type doesn't match mapped output event \"{outputEventName}\".");
+                                }
+
+                                publisher.PublishEvent(outputEventName, payload);
+                            }
+                        }
+                    });
+            }
+        }
+
+
+        /// <summary>
         /// Copy workflow execution context.
         /// </summary>
         /// <param name="workflowExecutionContext">The source workflow execution context.</param>
@@ -419,7 +479,7 @@ namespace EventDrivenWorkflow.Runtime
             {
                 ActivityExecutionStartDateTime = activityExecutionContext.ActivityExecutionStartDateTime,
                 ActivityName = activityExecutionContext.ActivityName,
-                ActivityExecutionId = activityExecutionContext.ActivityExecutionId,
+                ActivityId = activityExecutionContext.ActivityId,
 
                 AttemptCount = activityExecutionContext.AttemptCount + 1,
                 TriggerEventReference = activityExecutionContext.TriggerEventReference,
@@ -431,7 +491,7 @@ namespace EventDrivenWorkflow.Runtime
         /// </summary>
         /// <param name="inputEvents">The input events.</param>
         /// <returns>The calculated activity execution id.</returns>
-        private static Guid CaculateActivityExecutionId(string activityName, IReadOnlyDictionary<string, Event> inputEvents)
+        private static Guid CaculateActivityId(string activityName, IReadOnlyDictionary<string, Event> inputEvents)
         {
             var sb = new StringBuilder(capacity: activityName.Length + 1 + 37 * inputEvents.Count);
             sb.Append(activityName).Append(":");
