@@ -9,7 +9,7 @@ namespace EventDrivenWorkflow.Runtime.Data
     /// <summary>
     /// This class defines the data model used control workflow.
     /// </summary>
-    public sealed class ControlModel
+    public class ControlModel
     {
         public ControlModel()
         {
@@ -21,16 +21,5 @@ namespace EventDrivenWorkflow.Runtime.Data
         /// </summary>
         public ControlOperation Operation { get; init; }
 
-        /// <summary>
-        /// Gets the name of the target activity.
-        /// </summary>
-        public string TargetActivityName { get; init; }
-
-        public ActivityExecutionContext ActivityExecutionContext { get; init; }
-
-        /// <summary>
-        /// Gets the event model.
-        /// </summary>
-        public EventModel Event { get; init; }
     }
 }

@@ -20,12 +20,10 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             var activityStateStore = new EntityStore<Entity<ActivityState>>();
             var activityExecutionContextStore = new EntityStore<Entity<ExecutionContext>>();
             var eventPresenceStore = new EntityStore<Entity<EventReference>>();
-            var eventQueue = new MessageQueue<Message<EventModel>>();
-            var controlQueue = new MessageQueue<Message<ControlModel>>();
-
-            var workflowOrchestratorProvider = new TestWorkflowOrchestratorProvider(); 
-            var eventMessageProcessor = new MessageProcessor<Message<EventModel>>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
-            var controlMessageProcessor = new MessageProcessor<Message<ControlModel>>(controlQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
+            var eventQueue = new MessageQueue<EventMessage>();
+            var controlQueue = new MessageQueue<ControlMessage>();
+            var eventMessageProcessor = new MessageProcessor<EventMessage>(eventQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
+            var controlMessageProcessor = new MessageProcessor<ControlMessage>(controlQueue, maxAttemptCount: 2, retryInterval: TimeSpan.Zero);
             eventQueue.AddProcessor(eventMessageProcessor);
             controlQueue.AddProcessor(controlMessageProcessor);
 

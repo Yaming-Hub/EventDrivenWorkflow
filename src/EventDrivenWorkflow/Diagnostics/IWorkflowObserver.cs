@@ -22,9 +22,9 @@ namespace EventDrivenWorkflow.Diagnostics
 
         Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents);
 
-        Task HandleEventMessageFailed(Exception exception, Message<EventModel> eventMessage);
+        Task HandleEventMessageFailed(Exception exception, EventMessage eventMessage);
 
-        Task HandleControlMessageFailed(Exception exception, Message<ControlModel> eventMessage);
+        Task HandleControlMessageFailed(Exception exception, ControlMessage eventMessage);
 
         Task ActivityExecutionFailed(Exception exception, ExecutionContext context);
 

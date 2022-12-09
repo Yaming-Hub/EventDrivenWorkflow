@@ -15,7 +15,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
     /// <summary>
     /// This class defines a message handler which handles event messages.
     /// </summary>
-    internal sealed class EventMessageHandler : IMessageHandler<Message<EventModel>>
+    internal sealed class EventMessageHandler : IMessageHandler<EventMessage>
     {
         /// <summary>
         /// The workflow ochestrator.
@@ -32,7 +32,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
         }
 
         /// <inheritdoc/>
-        public async Task<MessageHandleResult> Handle(Message<EventModel> message)
+        public async Task<MessageHandleResult> Handle(EventMessage message)
         {
             try
             {
@@ -50,7 +50,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
             }
         }
 
-        private async Task<MessageHandleResult> HandleInternal(Message<EventModel> message)
+        private async Task<MessageHandleResult> HandleInternal(EventMessage message)
         {
             var workflowDefinition = orchestrator.WorkflowDefinition;
             if (message.WorkflowExecutionContext.WorkflowName != workflowDefinition.Name)
@@ -59,22 +59,22 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                 return MessageHandleResult.Continue; // Ignore if the event doesn't belong to this workflow.
             }
 
-            if (!workflowDefinition.EventDefinitions.TryGetValue(message.Value.Name, out var eventDefinition))
+            if (!workflowDefinition.EventDefinitions.TryGetValue(message.EventModel.Name, out var eventDefinition))
             {
                 // Got an unknown event. This may happen if the workflow is changed.
                 throw new WorkflowRuntimeException(
                     isTransient: false,
-                    $"Event {message.Value.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] is not defined in the " +
+                    $"Event {message.EventModel.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] is not defined in the " +
                     $"workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
             }
 
-            if (eventDefinition.PayloadType?.FullName != message.Value.Payload?.TypeName)
+            if (eventDefinition.PayloadType?.FullName != message.EventModel.Payload?.TypeName)
             {
                 // The incoming event payload type doesn't match the event definition, the workflow logic may have been changed.
                 throw new WorkflowRuntimeException(
                     isTransient: false,
-                    $"Event {message.Value.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] payload type " +
-                    $"{message.Value.Payload?.TypeName ?? "<null>"} doesn't match event definition {eventDefinition.PayloadType.GetDisplayName()} " +
+                    $"Event {message.EventModel.Name}[ver:{message.WorkflowExecutionContext.WorkflowVersion}] payload type " +
+                    $"{message.EventModel.Payload.TypeName ?? "<null>"} doesn't match event definition {eventDefinition.PayloadType.GetDisplayName()} " +
                     $"of workflow {this.orchestrator.WorkflowDefinition.GetNameAndVersion()}.");
             }
 
@@ -93,7 +93,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
             var allInputEventsAvailable = await this.orchestrator.InputEventLoader.TryLoadInputEvents(
                 activityDefinition: activityDefinition,
                 workflowExecutionContext: message.WorkflowExecutionContext,
-                triggerEventModel: message.Value,
+                triggerEventModel: message.EventModel,
                 inputEvents: inputEvents);
 
             if (!allInputEventsAvailable)
@@ -107,7 +107,7 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                 message.WorkflowExecutionContext,
                 activityDefinition,
                 inputEvents,
-                triggerEvent: message.Value);
+                triggerEvent: message.EventModel);
 
             // Delete the trigger event presence after execution completes successfully.
             if (message.WorkflowExecutionContext.Options.TrackProgress)
@@ -120,8 +120,8 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
                         executionId: context.WorkflowExecutionContext.ExecutionId,
                         workflowName: context.WorkflowExecutionContext.WorkflowName,
                         workflowId: context.WorkflowExecutionContext.WorkflowId,
-                        eventName: message.Value.Name,
-                        eventId: message.Value.Id));
+                        eventName: message.EventModel.Name,
+                        eventId: message.EventModel.Id));
             }
 
             return MessageHandleResult.Complete;
