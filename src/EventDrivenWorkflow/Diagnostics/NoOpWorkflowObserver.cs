@@ -58,5 +58,15 @@ namespace EventDrivenWorkflow.Diagnostics
         {
             return Task.CompletedTask;
         }
+
+        public Task ControlMessageSent(ControlMessage message)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ControlMessageProcessed(ControlMessage message)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

@@ -37,21 +37,11 @@ namespace Core.IntegrationTests
         }
 
         [TestMethod]
-        public async Task TestSimpleWorkflow()
+        public async Task TestSequentialWorkflow()
         {
-            var builder = new WorkflowBuilder("Test");
-            builder.RegisterEvent("e0");
-            builder.RegisterEvent("e1");
-            builder.RegisterEvent("e2");
-            builder.AddActivity("a1").Subscribe("e0").Publish("e1");
-            builder.AddActivity("a2").Subscribe("e1").Publish("e2");
-            builder.AddActivity("a3").Subscribe("e2");
+            var workflow = new SequentialWorkflow(engine: this.engine);
 
-            var workflowDefinition = builder.Build();
-            var activityFactory = new LogActivityFactory(workflowDefinition);
-            var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory);
-
-            await orchestrator.StartNew(options: new WorkflowExecutionOptions { TrackProgress = true });
+            await workflow.Orchestrator.StartNew(options: new WorkflowExecutionOptions { TrackProgress = true });
 
             await taskCompletionSource.Task;
 
@@ -61,11 +51,9 @@ namespace Core.IntegrationTests
         [TestMethod]
         public async Task TestCountDownWorkflow()
         {
-            var (wd, af) = CountDownWorkflow.Build();
+            var workflow = new CountDownWorkflow(engine: this.engine);
 
-            var orchestrator = new WorkflowOrchestrator(engine, wd, af);
-
-            await orchestrator.StartNew(payload: 3);
+            await workflow.Orchestrator.StartNew(payload: 3);
 
             await taskCompletionSource.Task;
 
@@ -94,13 +82,12 @@ namespace Core.IntegrationTests
         [TestMethod]
         public async Task TestSimpleRetryWorkflow()
         {
-            var (wd, af) = SimpleRetryWorkflow.Build(attempCount: 1);
-            var orchestrator = new WorkflowOrchestrator(engine, wd, af);
+            var workflow = new SimpleRetryWorkflow(engine: this.engine, attemptCount: 3);
 
-            await orchestrator.StartNew();
+            await workflow.Orchestrator.StartNew();
 
-            //await taskCompletionSource.Task;
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await taskCompletionSource.Task;
+            //await Task.Delay(TimeSpan.FromSeconds(3));
 
             Trace.WriteLine("Done");
         }

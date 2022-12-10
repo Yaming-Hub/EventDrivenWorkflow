@@ -68,6 +68,16 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.ActivityExecutionTimeout(context));
         }
 
+        public Task ControlMessageSent(ControlMessage message)
+        {
+            return IgnoreException(() => observer.ControlMessageSent(message));
+        }
+
+        public Task ControlMessageProcessed(ControlMessage message)
+        {
+            return IgnoreException(() => observer.ControlMessageProcessed(message));
+        }
+
         private async Task IgnoreException(Func<Task> observerAction)
         {
             try

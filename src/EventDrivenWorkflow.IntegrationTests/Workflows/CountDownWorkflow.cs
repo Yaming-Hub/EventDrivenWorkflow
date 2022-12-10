@@ -9,9 +9,10 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
     using System.Diagnostics;
     using EventDrivenWorkflow.Builder;
     using EventDrivenWorkflow.Definitions;
+    using EventDrivenWorkflow.Runtime;
     using EventDrivenWorkflow.Runtime.Data;
 
-    public static class CountDownWorkflow
+    public class CountDownWorkflow
     {
         public static (WorkflowDefinition, IExecutableFactory) Build()
         {
@@ -21,8 +22,29 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
             builder.AddActivity("ForwardActivity").Subscribe("countParameter").Publish("countVarible");
             builder.AddActivity("CountDownActivity").Subscribe("countVarible").Publish("countVarible");
 
+
             return (builder.Build(), new ExecutableFactory());
         }
+
+        public CountDownWorkflow(WorkflowEngine engine)
+        {
+            // countParameter -> Forward -> countVariable -> CountDown -> countVariable -> ... -> CountDown
+            var builder = new WorkflowBuilder("CountDown");
+            builder.RegisterEvent<int>("countParameter");
+            builder.RegisterEvent<int>("countVarible");
+            builder.AddActivity("ForwardActivity").Subscribe("countParameter").Publish("countVarible");
+            builder.AddActivity("CountDownActivity").Subscribe("countVarible").Publish("countVarible");
+
+            this.Definition = builder.Build();
+            this.Orchestrator = new WorkflowOrchestrator(
+                engine,
+                this.Definition,
+                new ExecutableFactory());
+        }
+
+        public WorkflowDefinition Definition { get; }
+
+        public WorkflowOrchestrator Orchestrator { get; }
 
         private class ExecutableFactory : IExecutableFactory
         {

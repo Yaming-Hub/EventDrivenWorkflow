@@ -17,8 +17,6 @@ namespace EventDrivenWorkflow.Runtime.Data
         /// </summary>
         public EventModel EventModel { get; init; }
 
-        public string WorkflowName { get; init; }
-
         /// <summary>
         /// Gets the workflow execution context of the message.
         /// </summary>

@@ -99,5 +99,21 @@ namespace EventDrivenWorkflow.Diagnostics
                 await observer.WorkflowStarted(context);
             }
         }
+
+        public async Task ControlMessageSent(ControlMessage message)
+        {
+            foreach (var observer in observers)
+            {
+                await observer.ControlMessageSent(message);
+            }
+        }
+
+        public async Task ControlMessageProcessed(ControlMessage message)
+        {
+            foreach (var observer in observers)
+            {
+                await observer.ControlMessageProcessed(message);
+            }
+        }
     }
 }

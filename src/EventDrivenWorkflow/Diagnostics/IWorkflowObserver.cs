@@ -29,5 +29,10 @@ namespace EventDrivenWorkflow.Diagnostics
         Task ActivityExecutionFailed(Exception exception, QualifiedExecutionContext context);
 
         Task ActivityExecutionTimeout(QualifiedExecutionContext context);
+
+        Task ControlMessageSent(ControlMessage message);
+
+        Task ControlMessageProcessed(ControlMessage message);
+
     }
 }

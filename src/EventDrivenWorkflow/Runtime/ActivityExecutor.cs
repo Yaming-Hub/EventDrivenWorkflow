@@ -274,6 +274,8 @@ namespace EventDrivenWorkflow.Runtime
             var cancellationTokenSource = new CancellationTokenSource(delay: activityDefinition.MaxExecuteDuration);
 
             bool succeeded = false;
+            Exception exception = null;
+            bool timeout = false;
 
             try
             {
@@ -287,14 +289,12 @@ namespace EventDrivenWorkflow.Runtime
             }
             catch (OperationCanceledException oce) when (oce.CancellationToken == cancellationTokenSource.Token)
             {
-                await this.orchestrator.Engine.Observer.ActivityExecutionTimeout(context);
-
+                timeout = true;
                 // TODO: Activity timeout
             }
             catch (Exception e)
             {
-                await this.orchestrator.Engine.Observer.ActivityExecutionFailed(e, context);
-
+                exception = e;
                 // TODO: Handle exceptions.
             }
             finally
@@ -345,18 +345,33 @@ namespace EventDrivenWorkflow.Runtime
                                 ActivityExecutionContext = IncrementAttemptCount(context.ActivityExecutionContext),
                             }
                         },
+                        WorkflowName = context.WorkflowExecutionContext.WorkflowName,
                         Operation = ControlOperation.ExecuteActivity,
 
                     };
 
                     await this.orchestrator.Engine.ControlMessageSender.Send(controlMessage, activityDefinition.RetryPolicy.DelayDuration);
+
+                    await this.orchestrator.Engine.Observer.ControlMessageSent(controlMessage);
                 }
                 else
                 {
+
                     // Max retry count limit is reached.
                     // TODO: Abandon activity.
                 }
+
+                if (timeout)
+                {
+                    await this.orchestrator.Engine.Observer.ActivityExecutionTimeout(context);
+                }
+                else if (exception != null)
+                {
+                    await this.orchestrator.Engine.Observer.ActivityExecutionFailed(exception, context);
+                }
             }
+
+
         }
 
         /// <summary>

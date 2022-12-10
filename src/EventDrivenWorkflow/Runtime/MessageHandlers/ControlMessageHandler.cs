@@ -53,17 +53,24 @@ namespace EventDrivenWorkflow.Runtime.MessageHandlers
 
             try
             {
-                return await operationHandler.Handle(this.orchestrator, message.ControlModel);
+                var handleResult = await operationHandler.Handle(this.orchestrator, message.ControlModel);
+                if (handleResult == MessageHandleResult.Complete)
+                {
+                    await this.orchestrator.Engine.Observer.ControlMessageProcessed(message);
+                }
+
+                return handleResult;
             }
             catch (WorkflowRuntimeException wre)
             {
                 await this.orchestrator.Engine.Observer.HandleControlMessageFailed(wre, message);
+
                 return wre.IsTransient ? MessageHandleResult.Yield : MessageHandleResult.Complete;
             }
             catch (Exception e)
             {
                 await this.orchestrator.Engine.Observer.HandleControlMessageFailed(e, message);
-                return MessageHandleResult.Yield; // Unknown exception will be considered as traisent.
+                return MessageHandleResult.Yield; // Unknown exception will be considered as transient.
             }
         }
     }

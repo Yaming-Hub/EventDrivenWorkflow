@@ -6,66 +6,82 @@
 
 namespace EventDrivenWorkflow.IntegrationTests.Environment
 {
-    using System.Diagnostics;
     using EventDrivenWorkflow.Diagnostics;
     using EventDrivenWorkflow.Runtime.Data;
+    using static EventDrivenWorkflow.IntegrationTests.Environment.TestLogger;
 
     public class TraceWorkflowObserver : IWorkflowObserver
     {
         public Task WorkflowStarted(WorkflowExecutionContext context)
         {
-            return Log($"WorkflowStarted    Workflow={context.GetPath()}");
+            Log(nameof(TraceWorkflowObserver), "WorkflowStarted", $"Workflow={context.GetPath()}");
+            return Task.CompletedTask;
         }
 
         public Task EventAccepted(QualifiedExecutionContext context, Event @event)
         {
-            return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
+            Log(nameof(TraceWorkflowObserver), "EventAccepted", $"Activity={context.GetPath()} Event={@event.Name}");
+            return Task.CompletedTask;
         }
 
         public Task ActivityStarting(QualifiedExecutionContext context, IEnumerable<Event> inputEvents)
         {
-            return Log($"ActivityStarting   Activity={context.GetPath()} Events={string.Join(",", inputEvents.Select(x => x.Name))}");
+            Log(nameof(TraceWorkflowObserver), "ActivityStarting", $"Activity={context.GetPath()} Events={string.Join(",", inputEvents.Select(x => x.Name))}");
+            return Task.CompletedTask;
         }
 
         public Task ActivityCompleted(QualifiedExecutionContext context, IEnumerable<Event> outputEvents)
         {
-            return Log($"ActivityCompleted  Activity={context.GetPath()} Events={string.Join(",", outputEvents.Select(x => x.Name))}");
+            Log(nameof(TraceWorkflowObserver), "ActivityCompleted", $"Activity={context.GetPath()} Events={string.Join(",", outputEvents.Select(x => x.Name))}");
+            return Task.CompletedTask;
         }
 
         public Task EventPublished(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, Event @event)
         {
             string activityInfo = $"{activityExecutionContext?.ActivityName}/{activityExecutionContext?.ActivityId}";
-            return Log($"EventPublished      Workflow={workflowExecutionContext.GetPath()} Activity={activityInfo} Event={@event.Name}");
+            Log(nameof(TraceWorkflowObserver), "EventPublished", $"Workflow={workflowExecutionContext.GetPath()} Activity={activityInfo} Event={@event.Name}");
+            return Task.CompletedTask;
         }
 
         public Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents)
         {
-            return Log($"WorkflowCompleted  Workflow={context.GetPath()}");
+            Log(nameof(TraceWorkflowObserver), "WorkflowCompleted", $"Workflow={context.GetPath()}");
+            return Task.CompletedTask;
         }
 
         public Task HandleEventMessageFailed(Exception exception, EventMessage eventMessage)
         {
-            return Log($"HandleEventMessageFailed {exception}");
+            Log(nameof(TraceWorkflowObserver), "HandleEventMessageFailed", $"exception={exception}");
+            return Task.CompletedTask;
         }
 
         public Task HandleControlMessageFailed(Exception exception, ControlMessage controlMessage)
         {
-            return Log($"HandleControlMessageFailed {exception}");
+            Log(nameof(TraceWorkflowObserver), "HandleControlMessageFailed", $"exception={exception}");
+            return Task.CompletedTask;
         }
 
         public Task ActivityExecutionFailed(Exception exception, QualifiedExecutionContext context)
         {
-            return Log($"ActivityExecutionFailed {exception} Activity={context.GetPath()}");
+            Log(nameof(TraceWorkflowObserver), "ActivityExecutionFailed", $"exception={exception} Activity={context.GetPath()}");
+            return Task.CompletedTask;
         }
 
         public Task ActivityExecutionTimeout(QualifiedExecutionContext context)
         {
-            return Log($"ActivityExecutionTimeout Activity={context.GetPath()}");
+            Log(nameof(TraceWorkflowObserver), "ActivityExecutionTimeout", $"Activity={context.GetPath()}");
+            return Task.CompletedTask;
         }
 
-        private static Task Log(string text)
+        public Task ControlMessageSent(ControlMessage message)
         {
-            Trace.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss")} {text}");
+            Log(nameof(TraceWorkflowObserver), "ControlMessageSent", $"Operation={message.Operation}");
+            return Task.CompletedTask;
+        }
+
+        public Task ControlMessageProcessed(ControlMessage message)
+        {
+            Log(nameof(TraceWorkflowObserver), "ActivityExecutionTimeout", $"Operation={message.Operation}");
             return Task.CompletedTask;
         }
     }

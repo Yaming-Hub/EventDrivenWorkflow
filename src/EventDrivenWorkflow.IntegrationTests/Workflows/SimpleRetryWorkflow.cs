@@ -11,9 +11,10 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
     using EventDrivenWorkflow.Builder;
     using EventDrivenWorkflow.Definitions;
     using EventDrivenWorkflow.IntegrationTests.Activities;
+    using EventDrivenWorkflow.Runtime;
     using EventDrivenWorkflow.Runtime.Data;
 
-    public static class SimpleRetryWorkflow
+    public class SimpleRetryWorkflow
     {
         public static (WorkflowDefinition, IExecutableFactory) Build(int attempCount)
         {
@@ -25,13 +26,33 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
             return (builder.Build(), new ExecutableFactory(attempCount));
         }
 
+        public SimpleRetryWorkflow(WorkflowEngine engine, int attemptCount = 3)
+        {
+            var builder = new WorkflowBuilder("RetryWorkflow");
+            builder.RegisterEvent("e0");
+            builder.RegisterEvent<string>("result");
+            builder.AddActivity("FailActivity").Subscribe("e0").Publish("result").Retry(maxRetryCount: 4, delayDuration: TimeSpan.Zero);
+            builder.AddActivity("LogResult").Subscribe("result");
+
+            this.Definition = builder.Build();
+            this.Orchestrator = new WorkflowOrchestrator(
+                engine,
+                this.Definition,
+                new ExecutableFactory(attemptCount));
+        }
+
+        public WorkflowDefinition Definition { get; }
+
+        public WorkflowOrchestrator Orchestrator { get; }
+
+
         private class ExecutableFactory : IExecutableFactory
         {
-            private Ref<int> attempRemaining;
+            private Ref<int> attemptRemaining;
 
-            public ExecutableFactory(int attempCount)
+            public ExecutableFactory(int attemptCount)
             {
-                this.attempRemaining = new Ref<int> { Value = attempCount };
+                this.attemptRemaining = new Ref<int> { Value = attemptCount };
             }
 
             public IExecutable CreateExecutable(string name)
@@ -39,7 +60,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Workflows
                 switch (name)
                 {
                     case "FailActivity":
-                        return new FailActivity(this.attempRemaining);
+                        return new FailActivity(this.attemptRemaining);
 
                     case "LogResult":
                         return new LogResult<string>();

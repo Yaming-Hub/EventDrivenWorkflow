@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EventDrivenWorkflow.Diagnostics;
 using EventDrivenWorkflow.Runtime.Data;
 using EventDrivenWorkflow.Utilities;
+using static EventDrivenWorkflow.IntegrationTests.Environment.TestLogger;
 
 namespace EventDrivenWorkflow.IntegrationTests.Environment
 {
@@ -14,30 +15,26 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
     {
         private TaskCompletionSource TaskCompletionSource;
         private readonly object lockObject;
-        private readonly List<string> activeEvents;
-        private readonly List<string> activeActivities;
+        private readonly List<string> events;
+        private readonly List<string> activities;
+        private int controlMessageCount;
 
         public CompletenessWorkflowObserver(TaskCompletionSource taskCompletionSource)
         {
             this.TaskCompletionSource = taskCompletionSource;
             this.lockObject = new object();
-            this.activeActivities = new List<string>();
-            this.activeEvents = new List<string>();
+            this.activities = new List<string>();
+            this.events = new List<string>();
+            this.controlMessageCount = 0;
         }
 
-        private static Task Log(string text)
+        private void CheckComplete()
         {
-            Trace.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss")} {text}");
-            return Task.CompletedTask;
-        }
+            Log(nameof(CompletenessWorkflowObserver), "CheckComplete", $"ActivityCount={this.activities.Count} EventCount={this.events.Count} ControlCount={this.controlMessageCount}.");
 
-        private void CheckComplete(WorkflowExecutionContext workflowExecutionContext)
-        {
-            Log($"[WorkflowCompletenessTracker] Check complete ActivityCount={this.activeActivities.Count} EventCount={this.activeEvents.Count}.");
-
-            if (this.activeActivities.Count == 0 && this.activeEvents.Count == 0)
+            if (this.activities.Count == 0 && this.events.Count == 0 && this.controlMessageCount == 0)
             {
-                Log($"[WorkflowCompletenessTracker] Workflow execution {workflowExecutionContext.ExecutionId} has completed.");
+                Log(nameof(CompletenessWorkflowObserver), "Completed", $"There is no pending or active execution.");
 
                 this.TaskCompletionSource?.SetResult();
             }
@@ -47,8 +44,8 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
         {
             lock (this.lockObject)
             {
-                this.activeActivities.Remove(context.ActivityExecutionId.GetPath());
-                this.CheckComplete(context.WorkflowExecutionContext);
+                this.activities.Remove(context.ActivityExecutionId.GetPath());
+                this.CheckComplete();
             }
 
             return Task.CompletedTask;
@@ -56,11 +53,23 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
 
         public Task ActivityExecutionFailed(Exception exception, QualifiedExecutionContext context)
         {
+            lock (this.lockObject)
+            {
+                this.activities.Remove(context.ActivityExecutionId.GetPath());
+                this.CheckComplete();
+            }
+
             return Task.CompletedTask;
         }
 
         public Task ActivityExecutionTimeout(QualifiedExecutionContext context)
         {
+            lock (this.lockObject)
+            {
+                this.activities.Remove(context.ActivityExecutionId.GetPath());
+                this.CheckComplete();
+            }
+
             return Task.CompletedTask;
         }
 
@@ -68,8 +77,8 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
         {
             lock (this.lockObject)
             {
-                this.activeActivities.Add(context.ActivityExecutionId.GetPath());
-                this.CheckComplete(context.WorkflowExecutionContext);
+                this.activities.Add(context.ActivityExecutionId.GetPath());
+                this.CheckComplete();
             }
 
             return Task.CompletedTask;
@@ -79,8 +88,8 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
         {
             lock (this.lockObject)
             {
-                activeEvents.Remove(@event.GetEventKey(context.WorkflowExecutionContext));
-                this.CheckComplete(context.WorkflowExecutionContext);
+                events.Remove(@event.GetEventKey(context.WorkflowExecutionContext));
+                this.CheckComplete();
             }
 
             return Task.CompletedTask;
@@ -90,8 +99,8 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
         {
             lock (this.lockObject)
             {
-                activeEvents.Add(@event.GetEventKey(workflowExecutionContext));
-                this.CheckComplete(workflowExecutionContext);
+                events.Add(@event.GetEventKey(workflowExecutionContext));
+                this.CheckComplete();
             }
 
             return Task.CompletedTask;
@@ -118,6 +127,28 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
 
         public Task WorkflowStarted(WorkflowExecutionContext context)
         {
+            return Task.CompletedTask;
+        }
+
+        public Task ControlMessageSent(ControlMessage message)
+        {
+            lock (this.lockObject)
+            {
+                this.controlMessageCount++;
+                this.CheckComplete();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task ControlMessageProcessed(ControlMessage message)
+        {
+            lock (this.lockObject)
+            {
+                this.controlMessageCount--;
+                this.CheckComplete();
+            }
+
             return Task.CompletedTask;
         }
     }
