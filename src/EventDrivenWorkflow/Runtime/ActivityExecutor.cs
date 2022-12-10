@@ -138,7 +138,7 @@ namespace EventDrivenWorkflow.Runtime
                 object value = outputEvent.Value;
                 if (value is Payload)
                 {
-                    payload = (Payload) value;
+                    payload = (Payload)value;
                 }
                 else
                 {
@@ -264,7 +264,12 @@ namespace EventDrivenWorkflow.Runtime
         {
             var activity = this.orchestrator.ExecutableFactory.CreateExecutable(context.ActivityExecutionContext.ActivityName);
 
-            await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
+            var inputEvents = eventOperator.GetInputEvents();
+            await this.orchestrator.Engine.Observer.ActivityStarting(context, inputEvents);
+            foreach (var inputEvent in inputEvents)
+            {
+                await this.orchestrator.Engine.Observer.EventAccepted(context, inputEvent);
+            }
 
             var cancellationTokenSource = new CancellationTokenSource(delay: activityDefinition.MaxExecuteDuration);
 
@@ -279,8 +284,6 @@ namespace EventDrivenWorkflow.Runtime
                     cancellationToken: cancellationTokenSource.Token);
 
                 succeeded = true;
-
-                await this.orchestrator.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
             }
             catch (OperationCanceledException oce) when (oce.CancellationToken == cancellationTokenSource.Token)
             {
@@ -323,6 +326,8 @@ namespace EventDrivenWorkflow.Runtime
             if (succeeded)
             {
                 await this.PublishOutputEvents(context, activityDefinition, eventOperator);
+
+                await this.orchestrator.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
             }
             else
             {
@@ -378,7 +383,12 @@ namespace EventDrivenWorkflow.Runtime
 
             try
             {
-                await this.orchestrator.Engine.Observer.ActivityStarting(context, eventOperator.GetInputEvents());
+                var inputEvents = eventOperator.GetInputEvents();
+                await this.orchestrator.Engine.Observer.ActivityStarting(context, inputEvents);
+                foreach (var inputEvent in inputEvents)
+                {
+                    await this.orchestrator.Engine.Observer.EventAccepted(context, inputEvent);
+                }
 
                 await activity.BeginExecute(
                     context: context,

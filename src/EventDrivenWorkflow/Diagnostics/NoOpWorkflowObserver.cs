@@ -25,7 +25,7 @@ namespace EventDrivenWorkflow.Diagnostics
             return Task.CompletedTask;
         }
 
-        public Task EventAccepted(WorkflowExecutionContext context, Event @event)
+        public Task EventAccepted(QualifiedExecutionContext context, Event @event)
         {
             return Task.CompletedTask;
         }

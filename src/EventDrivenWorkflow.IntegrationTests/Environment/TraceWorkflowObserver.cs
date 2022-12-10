@@ -17,7 +17,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
             return Log($"WorkflowStarted    Workflow={context.GetPath()}");
         }
 
-        public Task EventAccepted(WorkflowExecutionContext context, Event @event)
+        public Task EventAccepted(QualifiedExecutionContext context, Event @event)
         {
             return Log($"EventAccepted      Activity={context.GetPath()} Event={@event.Name}");
         }
@@ -35,7 +35,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
         public Task EventPublished(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, Event @event)
         {
             string activityInfo = $"{activityExecutionContext?.ActivityName}/{activityExecutionContext?.ActivityId}";
-            return Log($"EventAccepted      Workflow={workflowExecutionContext.GetPath()} Activity={activityInfo} Event={@event.Name}");
+            return Log($"EventPublished      Workflow={workflowExecutionContext.GetPath()} Activity={activityInfo} Event={@event.Name}");
         }
 
         public Task WorkflowCompleted(WorkflowExecutionContext context, IEnumerable<Event> outputEvents)

@@ -64,11 +64,12 @@ namespace EventDrivenWorkflow.Runtime
             return this.GetEvent(eventName, payloadType: null);
         }
 
-        ///// <inheritdoc/>
-        //public Event<T> GetEvent<T>(string eventName)
-        //{
-        //    return (Event<T>)this.GetEvent(eventName, typeof(T));
-        //}
+        /// <inheritdoc/>
+        public T GetEventValue<T>(string eventName)
+        {
+            var @event = this.GetEvent(eventName, typeof(T));
+            return (T)@event.Value;
+        }
 
         /// <inheritdoc/>
         public void PublishEvent(string eventName)
@@ -133,7 +134,7 @@ namespace EventDrivenWorkflow.Runtime
                 throw new ArgumentException($"The input event {eventName} is not defined.");
             }
 
-            if (eventDefinition.PayloadType != payloadType)
+            if (payloadType != null && eventDefinition.PayloadType != payloadType)
             {
                 throw new ArgumentException(
                     $"The input event {eventName} payload type {eventDefinition.PayloadType?.FullName ?? "<null>"} " +

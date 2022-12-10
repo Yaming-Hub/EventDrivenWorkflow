@@ -18,5 +18,7 @@ namespace EventDrivenWorkflow
         /// <param name="eventName">The event name.</param>
         /// <returns>The event.</returns>
         Event GetEvent(string eventName);
+
+        T GetEventValue<T>(string eventName);
     }
 }

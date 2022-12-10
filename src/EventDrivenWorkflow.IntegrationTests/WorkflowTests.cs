@@ -18,6 +18,24 @@ namespace Core.IntegrationTests
     [TestClass]
     public class WorkflowTests
     {
+        private CancellationTokenSource cancellationTokenSource;
+        private TaskCompletionSource taskCompletionSource;
+        private WorkflowEngine engine;
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            this.taskCompletionSource = new TaskCompletionSource();
+
+            this.cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            this.cancellationTokenSource.Token.Register(() =>
+            {
+                this.taskCompletionSource.SetCanceled();
+            });
+
+            this.engine = TestWorkflowEngineFactory.CreateMemoryEngine(this.taskCompletionSource);
+        }
+
         [TestMethod]
         public async Task TestSimpleWorkflow()
         {
@@ -31,12 +49,11 @@ namespace Core.IntegrationTests
 
             var workflowDefinition = builder.Build();
             var activityFactory = new LogActivityFactory(workflowDefinition);
-            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var orchestrator = new WorkflowOrchestrator(engine, workflowDefinition, activityFactory);
 
             await orchestrator.StartNew(options: new WorkflowExecutionOptions { TrackProgress = true });
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await taskCompletionSource.Task;
 
             Trace.WriteLine("Done");
         }
@@ -45,12 +62,12 @@ namespace Core.IntegrationTests
         public async Task TestCountDownWorkflow()
         {
             var (wd, af) = CountDownWorkflow.Build();
-            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
+
             var orchestrator = new WorkflowOrchestrator(engine, wd, af);
 
             await orchestrator.StartNew(payload: 3);
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await taskCompletionSource.Task;
 
             Trace.WriteLine("Done");
         }
@@ -61,15 +78,14 @@ namespace Core.IntegrationTests
             var source = new TaskCompletionSource<QualifiedActivityExecutionId>();
             var (wd, af) = SimpleAsyncWorkflow.Build(source);
 
-            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
-            var orchestrator = new WorkflowOrchestrator(engine, wd, af);
+           var orchestrator = new WorkflowOrchestrator(engine, wd, af);
 
             await orchestrator.StartNew();
 
             var qeid = await source.Task;
             await orchestrator.EndExecute(qeid, (c, p) => { p.PublishEvent("result", "the-async-result"); });
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await taskCompletionSource.Task;
 
             Trace.WriteLine("Done");
         }
@@ -79,12 +95,11 @@ namespace Core.IntegrationTests
         public async Task TestSimpleRetryWorkflow()
         {
             var (wd, af) = SimpleRetryWorkflow.Build(attempCount: 1);
-
-            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var orchestrator = new WorkflowOrchestrator(engine, wd, af);
 
             await orchestrator.StartNew();
 
+            //await taskCompletionSource.Task;
             await Task.Delay(TimeSpan.FromSeconds(3));
 
             Trace.WriteLine("Done");
@@ -95,12 +110,11 @@ namespace Core.IntegrationTests
         {
             var (wd, af) = ComplexRetryWorkflow.Build(attempCount: 2);
 
-            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var orchestrator = new WorkflowOrchestrator(engine, wd, af);
 
             await orchestrator.StartNew();
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await taskCompletionSource.Task;
 
             Trace.WriteLine("Done");
         }

@@ -15,7 +15,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
 
     public class TestWorkflowEngineFactory
     {
-        public static WorkflowEngine CreateMemoryEngine()
+        public static WorkflowEngine CreateMemoryEngine(TaskCompletionSource taskCompletionSource = null)
         {
             var eventStore = new EntityStore<Entity<EventModel>>();
             var activityStateStore = new EntityStore<Entity<ActivityState>>();
@@ -30,7 +30,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
 
             var observer = new PipelineWorkflowObserver(
                 new TraceWorkflowObserver(),
-                new CompletenessWorkflowObserver(taskCompletionSource: null)
+                new CompletenessWorkflowObserver(taskCompletionSource)
             );
 
             var engine = new WorkflowEngine(

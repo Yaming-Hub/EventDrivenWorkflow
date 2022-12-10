@@ -24,7 +24,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Activities
            IEventPublisher eventPublisher,
            CancellationToken cancellationToken)
         {
-            var result = eventRetriever.GetEvent(this.resultEventName).Value;
+            var result = eventRetriever.GetEventValue<TResult>(this.resultEventName);
             Trace.WriteLine($"[Forward.Execute] Result={result} Path={context.GetPath()}");
             return Task.CompletedTask;
         }

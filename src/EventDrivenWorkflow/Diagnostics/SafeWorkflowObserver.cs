@@ -33,7 +33,7 @@ namespace EventDrivenWorkflow.Diagnostics
             return IgnoreException(() => observer.ActivityStarting(context, inputEvents));
         }
 
-        public Task EventAccepted(WorkflowExecutionContext context, Event @event)
+        public Task EventAccepted(QualifiedExecutionContext context, Event @event)
         {
             return IgnoreException(() => observer.EventAccepted(context, @event));
         }

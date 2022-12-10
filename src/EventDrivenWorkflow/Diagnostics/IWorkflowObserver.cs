@@ -12,7 +12,7 @@ namespace EventDrivenWorkflow.Diagnostics
     {
         Task WorkflowStarted(WorkflowExecutionContext context);
 
-        Task EventAccepted(WorkflowExecutionContext context, Event @event);
+        Task EventAccepted(QualifiedExecutionContext context, Event @event);
 
         Task ActivityStarting(QualifiedExecutionContext context, IEnumerable<Event> inputEvents);
 

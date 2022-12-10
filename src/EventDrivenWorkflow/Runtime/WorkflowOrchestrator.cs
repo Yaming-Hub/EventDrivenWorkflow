@@ -313,9 +313,9 @@ namespace EventDrivenWorkflow.Runtime
                 publishOutputEvent(context, eventOperator);
             }
 
-            await this.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
-
             await this.ActivityExecutor.PublishOutputEvents(context, activityDefinition, eventOperator);
+            
+            await this.Engine.Observer.ActivityCompleted(context, eventOperator.GetOutputEvents());
 
             // Delete the context. Please note, if the EndExecute() is called multiple times before the context is deleted
             // it's possible that the output events will be published multiple times. This is acceptable as the workflow 

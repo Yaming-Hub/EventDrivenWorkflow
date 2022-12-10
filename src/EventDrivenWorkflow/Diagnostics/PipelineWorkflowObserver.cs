@@ -52,7 +52,7 @@ namespace EventDrivenWorkflow.Diagnostics
             }
         }
 
-        public async Task EventAccepted(WorkflowExecutionContext context, Event @event)
+        public async Task EventAccepted(QualifiedExecutionContext context, Event @event)
         {
             foreach (var observer in observers)
             {
