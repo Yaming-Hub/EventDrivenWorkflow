@@ -81,7 +81,7 @@ namespace EventDrivenWorkflow.IntegrationTests.Environment
 
         public Task ControlMessageProcessed(ControlMessage message)
         {
-            Log(nameof(TraceWorkflowObserver), "ActivityExecutionTimeout", $"Operation={message.Operation}");
+            Log(nameof(TraceWorkflowObserver), "ControlMessageProcessed", $"Operation={message.Operation}");
             return Task.CompletedTask;
         }
     }

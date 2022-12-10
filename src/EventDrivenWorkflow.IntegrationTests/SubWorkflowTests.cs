@@ -18,16 +18,32 @@ namespace Core.IntegrationTests
     [TestClass]
     public class SubWorkflowTests
     {
+        private CancellationTokenSource cancellationTokenSource;
+        private TaskCompletionSource taskCompletionSource;
+        private WorkflowEngine engine;
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            this.taskCompletionSource = new TaskCompletionSource();
+
+            this.cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            this.cancellationTokenSource.Token.Register(() =>
+            {
+                this.taskCompletionSource.SetCanceled();
+            });
+
+            this.engine = TestWorkflowEngineFactory.CreateMemoryEngine(this.taskCompletionSource);
+        }
+
         [TestMethod]
         public async Task TestSubWorkflow()
         {
-            var engine = TestWorkflowEngineFactory.CreateMemoryEngine();
             var workflow = new InvokeChildWorkflow(engine);
 
             await workflow.ParentWorkflowOrchestrator.StartNew();
 
-
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await taskCompletionSource.Task;
 
             Trace.WriteLine("Done");
         }

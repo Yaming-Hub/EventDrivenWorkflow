@@ -451,7 +451,6 @@ namespace EventDrivenWorkflow.Runtime
             IReadOnlyDictionary<string, Event> inputEvents,
             IReadOnlyDictionary<string, EventModel> inputEventModels)
         {
-            await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext, inputEvents.Select(x => x.Value));
 
             var callbackInfo = context.WorkflowExecutionContext.CallbackInfo;
             if (callbackInfo != null)
@@ -469,7 +468,15 @@ namespace EventDrivenWorkflow.Runtime
 
                 await this.orchestrator.Engine.ControlMessageSender.Send(controlMessage);
 
+                await this.orchestrator.Engine.Observer.ControlMessageSent(controlMessage);
             }
+
+            foreach(var inputEvent in inputEvents.Values)
+            {
+                await this.orchestrator.Engine.Observer.EventAccepted(context, inputEvent);
+            }
+
+            await this.orchestrator.Engine.Observer.WorkflowCompleted(context.WorkflowExecutionContext, inputEvents.Select(x => x.Value));
         }
 
 
